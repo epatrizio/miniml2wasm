@@ -1,0 +1,4 @@
+(mdx
+ (libraries miniml2wasm)
+ (deps %{bin:miniml2wasm})
+ (files README.md))

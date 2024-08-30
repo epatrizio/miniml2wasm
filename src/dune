@@ -1,0 +1,9 @@
+(library
+ (name miniml2wasm)
+ (modules ast)
+ (preprocess
+  (pps sedlex.ppx))
+ (libraries sedlex menhirLib))
+
+; (menhir
+;  (modules parser))

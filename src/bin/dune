@@ -1,0 +1,5 @@
+(executable
+ (public_name miniml2wasm)
+ (name compiler)
+ (modules compiler)
+ (libraries sedlex menhirLib miniml2wasm))
