@@ -8,7 +8,7 @@ type typ =
   | Tint32
   | Tunknown
 
-type ident = typ * string
+type ident = (*typ **) string
 
 type unop = Unot
 
@@ -55,3 +55,10 @@ and block =
 type prog = stmt
 
 (* pretty printer *)
+
+let pp_loc fmt (loc : location) =
+  let start, _end = loc in
+  let file = start.pos_fname in
+  let line = start.pos_lnum in
+  let char = start.pos_cnum - start.pos_bol in
+  Format.fprintf fmt {|File "%s", line %d, char %d|} file line char
