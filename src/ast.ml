@@ -5,10 +5,10 @@ type location = Lexing.position * Lexing.position
 type typ =
   | Tunit
   | Tbool
-  | Tint32
+  | Ti32
   | Tunknown
 
-type ident = (*typ **) string
+type ident = typ * string
 
 type unop = Unot
 

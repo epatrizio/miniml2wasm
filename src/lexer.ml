@@ -10,7 +10,7 @@ let digit = [%sedlex.regexp? '0' .. '9']
 
 let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
 
-let ident = [%sedlex.regexp? Plus (letter | digit | '_')]
+let name = [%sedlex.regexp? Plus (letter | digit | '_')]
 
 let blank = [%sedlex.regexp? ' ' | '\t']
 
@@ -44,7 +44,7 @@ let rec token buf =
   (* | '(' -> LPAREN
      | ')' -> RPAREN *)
   | ';' -> SEMICOLON
-  (* | ':' -> COLON *)
+  | ':' -> COLON
   | "let" -> LET
   | "in" -> IN
   | "begin" -> BEGIN
@@ -59,11 +59,11 @@ let rec token buf =
   | "||" -> OR
   | "not" -> NOT
   | "print" -> PRINT
-  (* | "unit" -> TUNIT
-     | "bool" -> TBOOL
-     | "i32" -> TI32 *)
+  | "unit" -> TUNIT
+  | "bool" -> TBOOL
+  | "i32" -> TI32
   | "(*" -> comment buf
-  | ident -> IDENT (Sedlexing.Utf8.lexeme buf)
+  | name -> NAME (Sedlexing.Utf8.lexeme buf)
   | eof -> EOF
   | _ ->
     let lxm = Sedlexing.Utf8.lexeme buf in

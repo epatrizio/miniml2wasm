@@ -2,6 +2,8 @@
 
 <!-- $MDX file=test/42.mml -->
 ```ml
-let x : int = 42 in
+(* type is optional, it can be inferred *)
+(* let x = 42 in *)
+let x : i32 = 42 in
   print x
 ```

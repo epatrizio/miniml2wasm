@@ -1,7 +1,7 @@
-%token PLUS MINUS MUL DIV SEMICOLON EQ LT LE GT GE EQEQ NEQ NOT AND OR
+%token PLUS MINUS MUL DIV SEMICOLON COLON EQ LT LE GT GE EQEQ NEQ NOT AND OR
 %token LET IN BEGIN DO DONE END WHILE IF THEN ELSE EOF PRINT
-// %token TUNIT TBOOL TI32 COLON LPAREN RPAREN
-%token <string> IDENT
+%token TUNIT TBOOL TI32
+%token <string> NAME
 %token <Ast.cst> CST
 
 // %left OR
@@ -19,8 +19,9 @@ open Ast
 %start prog
 
 %type <Ast.prog> prog
-%type <Ast.expr'> expr_bis
-%type <Ast.stmt'> stmt_bis
+// %type <Ast.expr'> expr_bis
+// %type <Ast.stmt'> stmt_bis
+// %type <Ast.ident> ident
 
 %%
 
@@ -28,7 +29,7 @@ let prog :=
   | ~ = stmt; EOF; <>
 
 let stmt_bis :=
-  | LET; ~ = IDENT; EQ; ~ = expr; IN; ~ = stmt; <Sassign>   // TODO add static type (with () ?)
+  | LET; ~ = ident; EQ; ~ = expr; IN; ~ = stmt; <Sassign>
   | BEGIN; ~ = block; END; <Sblock>
   | IF; ~ = expr; THEN; s1 = stmt; ELSE; s2 = stmt; <Sif>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
@@ -43,12 +44,16 @@ let block :=
 
 let expr_bis :=
   | ~ = CST; <Ecst>
-  | ~ = IDENT; <Eident>
+  | ~ = ident; <Eident>
   | ~ = unop; ~ = expr; <Eunop>
   | ~ = binop; e1 = expr; e2 = expr; <Ebinop>
   
 let expr :=
   | ~ = expr_bis; { (($startpos, $endpos), Tunknown, (expr_bis : expr')) : expr }
+
+let ident :=
+  | name = NAME; COLON; typ = typ; { (typ, name) : ident }
+  | name = NAME; { (Tunknown, name) : ident }
 
 let binop :=
   | AND; { Band }
@@ -66,5 +71,10 @@ let binop :=
 
 let unop :=
   | NOT; { Unot }
+
+let typ :=
+  | TUNIT; { Tunit }
+  | TBOOL; { Tbool }
+  | TI32; { Ti32 }
 
 %%
