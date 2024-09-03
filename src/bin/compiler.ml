@@ -18,9 +18,10 @@ let process source_code_file debug =
     Sedlexing.set_filename lexbuf source_code_file;
     let lexer = Sedlexing.with_tokenizer Lexer.token lexbuf in
     let parser = MenhirLib.Convert.Simplified.traditional2revised Parser.prog in
-    let _prog = parser lexer in
-    if debug then begin print_endline "debug mode"
-      (* Ast.print_prog Format.std_formatter prog *)
+    let prog = parser lexer in
+    if debug then begin
+      print_endline "debug mode";
+      Ast.print_prog Format.std_formatter prog
     end;
     close_in ic
   with

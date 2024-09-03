@@ -29,7 +29,7 @@ let rec token buf =
   | unit -> CST Cunit
   | boolean -> CST (Cbool (bool_of_string (Sedlexing.Utf8.lexeme buf)))
   | integer ->
-    CST (Cint32 (Int32.of_int (int_of_string (Sedlexing.Utf8.lexeme buf))))
+    CST (Ci32 (Int32.of_int (int_of_string (Sedlexing.Utf8.lexeme buf))))
   | '+' -> PLUS
   | '-' -> MINUS
   | '*' -> MUL
