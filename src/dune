@@ -1,6 +1,6 @@
 (library
  (name miniml2wasm)
- (modules ast lexer parser)
+ (modules ast lexer parser syntax typer)
  (preprocess
   (pps sedlex.ppx))
  (libraries sedlex menhirLib))

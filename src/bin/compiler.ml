@@ -1,5 +1,6 @@
 open Format
 open Miniml2wasm
+open Syntax
 
 let debug = ref false
 
@@ -23,18 +24,20 @@ let process source_code_file debug =
       print_endline "debug mode";
       Ast.print_prog Format.std_formatter prog
     end;
-    close_in ic
+    print_endline "typing ...";
+    let* _prog = Typer.typecheck_prog prog in
+    close_in ic;
+    Ok ()
   with
-  | Lexer.Lexing_error message ->
-    eprintf "Lexical error: %s@." message;
-    exit 1
+  | Lexer.Lexing_error message -> Error ("Lexing error: " ^ message)
   | Parser.Error ->
     let loc = Sedlexing.lexing_positions lexbuf in
-    eprintf "Syntax error: %a@." Ast.pp_loc loc;
-    exit 1
-  | _ -> assert false (* TODO: specific error management *)
+    Error ("Syntax error: " ^ Ast.str_loc loc)
+  | Typer.Typing_error message -> Error ("Typing error: " ^ message)
 
-(* Entry point *)
+(* Compiler entry point *)
 let () =
   Arg.parse options set_file usage;
-  process !in_file_name !debug
+  match process !in_file_name !debug with
+  | Ok () -> ()
+  | Error message -> eprintf "%s@." message

@@ -37,9 +37,9 @@ and expr' =
   | Ecst of cst
   | Eident of ident
   | Eunop of unop * expr
-  | Ebinop of binop * expr * expr
+  | Ebinop of expr * binop * expr
 
-type stmt = location * stmt'
+type stmt = location * typ * stmt'
 
 and stmt' =
   | Sassign of ident * expr * stmt
@@ -100,10 +100,10 @@ let rec print_expr fmt (_, _, expr) =
   | Ecst cst -> print_cst fmt cst
   | Eident ident -> print_ident fmt ident
   | Eunop (unop, e) -> fprintf fmt {|%a %a|} print_unop unop print_expr e
-  | Ebinop (binop, e1, e2) ->
-    fprintf fmt {|%a %a %a|} print_binop binop print_expr e1 print_expr e2
+  | Ebinop (e1, binop, e2) ->
+    fprintf fmt {|%a %a %a|} print_expr e1 print_binop binop print_expr e2
 
-let rec print_stmt fmt (_, stmt) =
+let rec print_stmt fmt (_, _, stmt) =
   match stmt with
   | Sassign (ident, expr, stmt) ->
     fprintf fmt {|let %a = %a in@.@[<v 2>%a@]|}
@@ -124,9 +124,11 @@ and print_block fmt = function
 
 let print_prog fmt prog = fprintf fmt {|@[%a@[@.|} print_stmt prog
 
-let pp_loc fmt (loc : location) =
+let str_loc (loc : location) =
   let start, _end = loc in
   let file = start.pos_fname in
   let line = start.pos_lnum in
   let char = start.pos_cnum - start.pos_bol in
-  fprintf fmt {|File "%s", line %d, char %d|} file line char
+  sprintf {|File "%s", line %d, char %d|} file line char
+
+let pp_loc fmt (loc : location) = pp_print_string fmt (str_loc loc)

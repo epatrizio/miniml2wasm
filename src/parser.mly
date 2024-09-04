@@ -8,7 +8,7 @@
 // %left AND
 // %left LT GT LE GE NEQ EQEQ
 // %left PLUS MINUS
-// %left MUL DIV FLDIV MOD
+// %left MUL DIV
 
 %{
 
@@ -36,7 +36,7 @@ let stmt_bis :=
   | PRINT; ~ = expr; <Sprint>
 
 let stmt :=
-  | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
+  | ~ = stmt_bis; { (($startpos, $endpos), Tunknown, (stmt_bis : stmt')) : stmt }
 
 let block :=
   | ~ = stmt; <Bstmt>
@@ -46,8 +46,8 @@ let expr_bis :=
   | ~ = CST; <Ecst>
   | ~ = ident; <Eident>
   | ~ = unop; ~ = expr; <Eunop>
-  | ~ = binop; e1 = expr; e2 = expr; <Ebinop>
-  
+  | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
+
 let expr :=
   | ~ = expr_bis; { (($startpos, $endpos), Tunknown, (expr_bis : expr')) : expr }
 
