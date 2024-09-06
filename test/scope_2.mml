@@ -1,0 +1,6 @@
+let x : i32 = 42 in
+begin
+  print y;
+  let y = true in
+    print y
+end

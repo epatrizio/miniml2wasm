@@ -1,2 +1,2 @@
 (cram
- (deps typer_1.mml typer_2.mml))
+ (deps scope_1.mml scope_2.mml typer_1.mml typer_2.mml))
