@@ -28,6 +28,10 @@ let rec typecheck_expr (loc, typ, expr') : (expr, _) result =
         match t with
         | Tbool -> Ok (loc, Tbool, Eunop (Unot, (l, t, expr')))
         | _ -> error loc "attempt to perform unop 'not' on a non boolean type" )
+      | Uminus -> (
+        match t with
+        | Ti32 -> Ok (loc, Ti32, Eunop (Uminus, (l, t, expr')))
+        | _ -> error loc "attempt to perform unop '-' on a non i32 type" )
     end
   | Ebinop (e1, binop, e2) ->
     let* l1, typ1, e1' = typecheck_expr e1 in

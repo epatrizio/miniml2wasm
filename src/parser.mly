@@ -74,6 +74,7 @@ let ident :=
 
 let unop :=
   | NOT; { Unot }
+  | MINUS; { Uminus }
 
 let typ :=
   | TUNIT; { Tunit }

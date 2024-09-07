@@ -5,3 +5,6 @@ typing error:
   $ dune exec miniml2wasm -- typer_2.mml
   typing ...
   Typing error: File "typer_2.mml", line 1, char 14: attempt to perform binop 'add' on a non i32 types
+  $ dune exec miniml2wasm -- typer_3.mml
+  typing ...
+  Typing error: File "typer_3.mml", line 1, char 15: attempt to perform unop '-' on a non i32 type

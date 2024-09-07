@@ -10,7 +10,9 @@ type typ =
 
 type ident = typ * string
 
-type unop = Unot
+type unop =
+  | Unot
+  | Uminus
 
 type binop =
   | Band
@@ -71,7 +73,8 @@ let print_ident fmt ?(typ_display = false) ((typ, name) as _ident : ident) =
   if typ_display then fprintf fmt {|%s: %a|} name print_typ typ
   else fprintf fmt {|%s|} name
 
-let print_unop fmt unop = pp_print_string fmt @@ match unop with Unot -> "not"
+let print_unop fmt unop =
+  pp_print_string fmt @@ match unop with Unot -> "not" | Uminus -> "-"
 
 let print_binop fmt binop =
   pp_print_string fmt
