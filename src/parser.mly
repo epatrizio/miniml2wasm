@@ -4,11 +4,14 @@
 %token <string> NAME
 %token <Ast.cst> CST
 
-// %left OR
-// %left AND
-// %left LT GT LE GE NEQ EQEQ
-// %left PLUS MINUS
-// %left MUL DIV
+// %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
+
+%left OR
+%left AND
+%left LT GT LE GE NEQ EQEQ
+%left PLUS MINUS
+%left MUL DIV
+%nonassoc UNARY_OP (* unary operators *)
 
 %{
 
@@ -45,7 +48,7 @@ let block :=
 let expr_bis :=
   | ~ = CST; <Ecst>
   | ~ = ident; <Eident>
-  | ~ = unop; ~ = expr; <Eunop>
+  | ~ = unop; ~ = expr; %prec UNARY_OP <Eunop>
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
 
 let expr :=
@@ -55,7 +58,7 @@ let ident :=
   | name = NAME; COLON; typ = typ; { (typ, name) : ident }
   | name = NAME; { (Tunknown, name) : ident }
 
-let binop :=
+%inline binop :
   | AND; { Band }
   | OR; { Bor }
   | PLUS; { Badd }
