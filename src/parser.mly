@@ -1,4 +1,4 @@
-%token PLUS MINUS MUL DIV SEMICOLON COLON EQ LT LE GT GE EQEQ NEQ NOT AND OR
+%token PLUS MINUS MUL DIV LPAREN RPAREN SEMICOLON COLON EQ LT LE GT GE EQEQ NEQ NOT AND OR
 %token LET IN BEGIN DO DONE END WHILE IF THEN ELSE EOF PRINT
 %token TUNIT TBOOL TI32
 %token <string> NAME
@@ -6,12 +6,17 @@
 
 // %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
 
-%left OR
-%left AND
+%right EQ
+%right OR
+%right AND
 %left LT GT LE GE NEQ EQEQ
 %left PLUS MINUS
 %left MUL DIV
 %nonassoc UNARY_OP (* unary operators *)
+
+%nonassoc ELSE
+%nonassoc IN
+%nonassoc PRINT
 
 %{
 
@@ -29,30 +34,36 @@ open Ast
 %%
 
 let prog :=
-  | ~ = stmt; EOF; <>
+  | ~ = expr; EOF; <>
+
+let assign :=
+  | i = ident; EQ; e = expr; <Sassign>
 
 let stmt_bis :=
-  | LET; ~ = ident; EQ; ~ = expr; IN; ~ = stmt; <Sassign>
-  | BEGIN; ~ = block; END; <Sblock>
-  | IF; ~ = expr; THEN; s1 = stmt; ELSE; s2 = stmt; <Sif>
+  | ~ = assign; <>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | PRINT; ~ = expr; <Sprint>
 
 let stmt :=
-  | ~ = stmt_bis; { (($startpos, $endpos), Tunknown, (stmt_bis : stmt')) : stmt }
+  | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
 
 let block :=
-  | ~ = stmt; <Bstmt>
-  | ~ = stmt; SEMICOLON; ~ = block; <Bseq>
+  | ~ = expr; <Bexpr>
+  | ~ = expr; SEMICOLON; ~ = block; <Bseq>
 
 let expr_bis :=
   | ~ = CST; <Ecst>
   | ~ = ident; <Eident>
   | ~ = unop; ~ = expr; %prec UNARY_OP <Eunop>
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
+  | BEGIN; ~ = block; END; <Eblock>
+  | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
+  | LET; ~ = assign; IN; ~ = expr; { Elet ((($startpos, $endpos), assign), expr) }
+  | ~ = stmt; <Estmt>
 
 let expr :=
   | ~ = expr_bis; { (($startpos, $endpos), Tunknown, (expr_bis : expr')) : expr }
+  | expr = delimited(LPAREN, expr, RPAREN); { expr }
 
 let ident :=
   | name = NAME; COLON; typ = typ; { (typ, name) : ident }

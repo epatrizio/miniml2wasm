@@ -41,8 +41,8 @@ let rec token buf =
   | '>' -> GT
   | ">=" -> GE
   | '=' -> EQ
-  (* | '(' -> LPAREN
-     | ')' -> RPAREN *)
+  | '(' -> LPAREN
+  | ')' -> RPAREN
   | ';' -> SEMICOLON
   | ':' -> COLON
   | "let" -> LET

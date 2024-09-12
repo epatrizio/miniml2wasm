@@ -40,21 +40,23 @@ and expr' =
   | Eident of ident
   | Eunop of unop * expr
   | Ebinop of expr * binop * expr
+  | Eblock of block
+  | Eif of expr * expr * expr
+  | Elet of stmt * expr
+  | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
-type stmt = location * typ * stmt'
+and block =
+  | Bexpr of expr
+  | Bseq of expr * block
+
+and stmt = location * stmt'
 
 and stmt' =
-  | Sassign of ident * expr * stmt
-  | Sblock of block
-  | Sif of expr * stmt * stmt
+  | Sassign of ident * expr
   | Swhile of expr * block
   | Sprint of expr
 
-and block =
-  | Bstmt of stmt
-  | Bseq of stmt * block
-
-type prog = stmt
+type prog = expr
 
 (* pretty printer *)
 
@@ -105,27 +107,31 @@ let rec print_expr fmt (_, _, expr) =
   | Eunop (unop, e) -> fprintf fmt {|%a %a|} print_unop unop print_expr e
   | Ebinop (e1, binop, e2) ->
     fprintf fmt {|%a %a %a|} print_expr e1 print_binop binop print_expr e2
+  | Eblock block -> print_block fmt block
+  | Eif (e_cond, e_then, e_else) ->
+    fprintf fmt {|if %a then %a else %a|} print_expr e_cond print_expr e_then
+      print_expr e_else
+  | Elet (stmt_assign, expr) ->
+    fprintf fmt {|let %a in@.@[<v 2>%a@]|} print_stmt stmt_assign print_expr
+      expr
+  | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
-let rec print_stmt fmt (_, _, stmt) =
+and print_stmt fmt (_, stmt) =
   match stmt with
-  | Sassign (ident, expr, stmt) ->
-    fprintf fmt {|let %a = %a in@.@[<v 2>%a@]|}
+  | Sassign (ident, expr) ->
+    fprintf fmt {|%a = %a|}
       (print_ident ~typ_display:true)
-      ident print_expr expr print_stmt stmt
-  | Sblock block -> print_block fmt block
-  | Sif (expr, s1, s2) ->
-    fprintf fmt {|if %a then %a else %a|} print_expr expr print_stmt s1
-      print_stmt s2
+      ident print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sprint expr -> fprintf fmt {|print %a|} print_expr expr
 
 and print_block fmt = function
-  | Bstmt stmt -> print_stmt fmt stmt
-  | Bseq (stmt, block) ->
-    fprintf fmt {|%a; %a|} print_stmt stmt print_block block
+  | Bexpr expr -> print_expr fmt expr
+  | Bseq (expr, block) ->
+    fprintf fmt {|%a; %a|} print_expr expr print_block block
 
-let print_prog fmt prog = fprintf fmt {|@[%a@[@.|} print_stmt prog
+let print_prog fmt expr = fprintf fmt {|@[%a@[@.|} print_expr expr
 
 let str_loc (loc : location) =
   let start, _end = loc in
