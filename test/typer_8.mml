@@ -1,0 +1,7 @@
+let x : i32 = 1 in
+let y : i32 = 2 in
+  while true do
+    print x;
+    print y;
+    42
+  done

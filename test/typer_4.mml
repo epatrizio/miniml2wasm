@@ -1,0 +1,2 @@
+let x : bool = if true then 42 else -42 in
+  print x

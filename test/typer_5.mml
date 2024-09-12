@@ -1,0 +1,7 @@
+let x : i32 = 42 in
+begin
+  print x;
+  (1 + 2);  (* error: not unit! *)
+  let y = true in
+    print y
+end

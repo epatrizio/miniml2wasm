@@ -106,7 +106,19 @@ and typecheck_stmt (loc, stmt') : (stmt, _) result =
         Ok (loc, Sassign ((typ_e, ident_name), (loc_e, typ_e, expr')))
       | _ -> error loc "attempt to perform an assignment with different types"
     end
-  | Swhile (_expr, _block) -> assert false
+  | Swhile (expr, block) ->
+    let* loc_e, typ_e, expr' = typecheck_expr expr in
+    begin
+      match typ_e with
+      | Tbool ->
+        let* typ_b, block = typecheck_block block in
+        begin
+          match typ_b with
+          | Tunit -> Ok (loc, Swhile ((loc_e, typ_e, expr'), block))
+          | _ -> error loc "type unit is expected in the body of a while-loop"
+        end
+      | _ -> error loc "type bool is expected in the condition of a while-loop"
+    end
   | Sprint expr ->
     let* expr = typecheck_expr expr in
     Ok (loc, Sprint expr)

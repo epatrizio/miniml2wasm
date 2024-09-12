@@ -1,2 +1,12 @@
 (cram
- (deps scope_1.mml scope_2.mml typer_1.mml typer_2.mml typer_3.mml))
+ (deps
+  scope_1.mml
+  scope_2.mml
+  typer_1.mml
+  typer_2.mml
+  typer_3.mml
+  typer_4.mml
+  typer_5.mml
+  typer_6.mml
+  typer_7.mml
+  typer_8.mml))

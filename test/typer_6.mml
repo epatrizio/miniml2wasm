@@ -1,0 +1,7 @@
+let x : i32 =
+  begin
+    print 1;
+    print 2;
+    false     (* block type = bool, i32 expected *)
+  end
+in print x
