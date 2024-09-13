@@ -6,17 +6,19 @@
 
 // %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
 
+(* tmp (PRINT token), coming soon: it should be a func app *)
+%nonassoc PRINT
+
 %right EQ
 %right OR
 %right AND
 %left LT GT LE GE NEQ EQEQ
 %left PLUS MINUS
 %left MUL DIV
-%nonassoc UNARY_OP (* unary operators *)
 
+%nonassoc UNARY_OP (* unary operators *)
 %nonassoc ELSE
 %nonassoc IN
-%nonassoc PRINT
 
 %{
 

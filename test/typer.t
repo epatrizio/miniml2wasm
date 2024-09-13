@@ -13,7 +13,7 @@ typing error:
   Typing error: File "typer_4.mml", line 1, char 0: attempt to perform an assignment with different types
   $ dune exec miniml2wasm -- typer_5.mml
   typing ...
-  Typing error: File "typer_5.mml", line 4, char 3: unit type expected in the left-hand side of a sequence
+  Typing error: File "typer_5.mml", line 5, char 3: unit type expected in the left-hand side of a sequence
   $ dune exec miniml2wasm -- typer_6.mml
   typing ...
   Typing error: File "typer_6.mml", line 1, char 0: attempt to perform an assignment with different types
