@@ -37,13 +37,13 @@ let process source_code_file debug =
       print_endline "raw input program:";
       Ast.print_prog Format.std_formatter prog
     end;
-    print_endline "typing ...";
-    let* prog = Typer.typecheck_prog prog in
-    print_endline "scope analysing ...";
     let env = Env.empty () in
+    print_endline "scope analysing ...";
     let* prog, env = Scope.analysis prog env in
+    print_endline "typing ...";
+    let* prog, env = Typer.typecheck_prog prog env in
     if debug then begin
-      print_endline "program after scope analysis:";
+      print_endline "program after typing and scope analysis:";
       Ast.print_prog Format.std_formatter prog
     end;
     print_endline "compiling ...";
