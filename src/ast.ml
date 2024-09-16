@@ -107,7 +107,7 @@ let rec print_expr fmt (_, _, expr) =
   | Eunop (unop, e) -> fprintf fmt {|%a %a|} print_unop unop print_expr e
   | Ebinop (e1, binop, e2) ->
     fprintf fmt {|%a %a %a|} print_expr e1 print_binop binop print_expr e2
-  | Eblock block -> print_block fmt block
+  | Eblock block -> fprintf fmt {|begin@.@[<v 2>%a@]@.end|} print_block block
   | Eif (e_cond, e_then, e_else) ->
     fprintf fmt {|if %a then %a else %a|} print_expr e_cond print_expr e_then
       print_expr e_else
@@ -129,9 +129,9 @@ and print_stmt fmt (_, stmt) =
 and print_block fmt = function
   | Bexpr expr -> print_expr fmt expr
   | Bseq (expr, block) ->
-    fprintf fmt {|%a; %a|} print_expr expr print_block block
+    fprintf fmt {|%a;@.%a|} print_expr expr print_block block
 
-let print_prog fmt expr = fprintf fmt {|@[%a@[@.|} print_expr expr
+let print_prog fmt expr = fprintf fmt {|@[<v 2>%a@]@.|} print_expr expr
 
 let str_loc (loc : location) =
   let start, _end = loc in
