@@ -17,7 +17,8 @@ let rec analyse_expr (loc, typ, expr') env =
     let* e2, env = analyse_expr e2 env in
     Ok ((loc, typ, Ebinop (e1, binop, e2)), env)
   | Eblock block ->
-    let* block, env = analyse_block block env in
+    (* _env: block local scope *)
+    let* block, _env = analyse_block block env in
     Ok ((loc, typ, Eblock block), env)
   | Eif (e_cond, e_then, e_else) ->
     let* e_cond, env = analyse_expr e_cond env in
