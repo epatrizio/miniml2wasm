@@ -42,7 +42,7 @@ and expr' =
   | Ebinop of expr * binop * expr
   | Eblock of block
   | Eif of expr * expr * expr
-  | Elet of stmt * expr
+  | Elet of ident * expr * expr
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -52,7 +52,6 @@ and block =
 and stmt = location * stmt'
 
 and stmt' =
-  | Sassign of ident * expr
   | Swhile of expr * block
   | Sprint of expr
 
@@ -72,7 +71,7 @@ let print_typ fmt typ =
   | Tunknown -> "unknown_type"
 
 let print_ident fmt ?(typ_display = false) ((typ, name) as _ident : ident) =
-  if typ_display then fprintf fmt {|%s: %a|} name print_typ typ
+  if typ_display then fprintf fmt {|%s : %a|} name print_typ typ
   else fprintf fmt {|%s|} name
 
 let print_unop fmt unop =
@@ -111,17 +110,14 @@ let rec print_expr fmt (_, _, expr) =
   | Eif (e_cond, e_then, e_else) ->
     fprintf fmt {|if %a then %a else %a|} print_expr e_cond print_expr e_then
       print_expr e_else
-  | Elet (stmt_assign, expr) ->
-    fprintf fmt {|let %a in@.@[<v 2>%a@]|} print_stmt stmt_assign print_expr
-      expr
+  | Elet (ident, e1, e2) ->
+    fprintf fmt {|let %a = %a in@.@[<v 2>%a@]|}
+      (print_ident ~typ_display:true)
+      ident print_expr e1 print_expr e2
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =
   match stmt with
-  | Sassign (ident, expr) ->
-    fprintf fmt {|%a = %a|}
-      (print_ident ~typ_display:true)
-      ident print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sprint expr -> fprintf fmt {|print %a|} print_expr expr

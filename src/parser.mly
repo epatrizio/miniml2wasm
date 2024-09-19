@@ -9,7 +9,6 @@
 (* tmp (PRINT token), coming soon: it should be a func app *)
 %nonassoc PRINT
 
-%right EQ
 %right OR
 %right AND
 %left LT GT LE GE NEQ EQEQ
@@ -38,11 +37,7 @@ open Ast
 let prog :=
   | ~ = expr; EOF; <>
 
-let assign :=
-  | i = ident; EQ; e = expr; <Sassign>
-
 let stmt_bis :=
-  | ~ = assign; <>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | PRINT; ~ = expr; <Sprint>
 
@@ -60,7 +55,7 @@ let expr_bis :=
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
   | BEGIN; ~ = block; END; <Eblock>
   | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
-  | LET; ~ = assign; IN; ~ = expr; { Elet ((($startpos, $endpos), assign), expr) }
+  | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = stmt; <Estmt>
 
 let expr :=

@@ -25,10 +25,11 @@ let rec analyse_expr (loc, typ, expr') env =
     let* e_then, env = analyse_expr e_then env in
     let* e_else, env = analyse_expr e_else env in
     Ok ((loc, typ, Eif (e_cond, e_then, e_else)), env)
-  | Elet (stmt_assign, expr) ->
-    let* stmt_assign, env = analyse_stmt stmt_assign env in
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, typ, Elet (stmt_assign, expr)), env)
+  | Elet ((typ_ident, name), e1, e2) ->
+    let fresh_name, env = Env.add_local name env in
+    let* e1, env = analyse_expr e1 env in
+    let* e2, env = analyse_expr e2 env in
+    Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)
@@ -45,11 +46,6 @@ and analyse_block block env =
 
 and analyse_stmt (loc, stmt') env =
   match stmt' with
-  | Sassign ((typ_ident, name), expr) ->
-    (* local scope. TODO: Global scope ? *)
-    let fresh_name, env = Env.add_local name env in
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, Sassign ((typ_ident, fresh_name), expr)), env)
   | Swhile (expr, block) ->
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in

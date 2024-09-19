@@ -76,10 +76,28 @@ let rec typecheck_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
       | _ ->
         error loc "attempt to perform a non boolean if expression condition"
     end
-  | Elet (stmt_assign, expr) ->
-    let* stmt_assign, env = typecheck_stmt stmt_assign env in
-    let* (l, t, expr'), env = typecheck_expr expr env in
-    Ok ((loc, t, Elet (stmt_assign, (l, t, expr'))), env)
+  | Elet ((ident_typ, ident_name), e1, e2) ->
+    let* (loc_e1, typ_e1, e1'), env = typecheck_expr e1 env in
+    begin
+      match (ident_typ, typ_e1) with
+      | Tunknown, typ_e1 ->
+        let env = Env.set_type ident_name typ_e1 env in
+        let* (l, t, e2'), env = typecheck_expr e2 env in
+        Ok
+          ( ( loc
+            , t
+            , Elet ((typ_e1, ident_name), (loc_e1, typ_e1, e1'), (l, t, e2')) )
+          , env )
+      | ident_typ, typ_e1 when ident_typ = typ_e1 ->
+        let env = Env.set_type ident_name typ_e1 env in
+        let* (l, t, e2'), env = typecheck_expr e2 env in
+        Ok
+          ( ( loc
+            , t
+            , Elet ((typ_e1, ident_name), (loc_e1, typ_e1, e1'), (l, t, e2')) )
+          , env )
+      | _ -> error loc "attempt to perform an assignment with different types"
+    end
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -99,18 +117,6 @@ and typecheck_block block env : (typ * block * typ Env.t, _) result =
 
 and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
   match stmt' with
-  | Sassign ((ident_typ, ident_name), expr) ->
-    let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
-    begin
-      match (ident_typ, typ_e) with
-      | Tunknown, typ_e ->
-        let env = Env.set_type ident_name typ_e env in
-        Ok ((loc, Sassign ((typ_e, ident_name), (loc_e, typ_e, expr'))), env)
-      | ident_typ, typ_e when ident_typ = typ_e ->
-        let env = Env.set_type ident_name typ_e env in
-        Ok ((loc, Sassign ((typ_e, ident_name), (loc_e, typ_e, expr'))), env)
-      | _ -> error loc "attempt to perform an assignment with different types"
-    end
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
