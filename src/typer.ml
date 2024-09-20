@@ -117,6 +117,18 @@ and typecheck_block block env : (typ * block * typ Env.t, _) result =
 
 and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
   match stmt' with
+  | Slet ((ident_typ, ident_name), expr) ->
+    let* (loc_e, typ_e, e'), env = typecheck_expr expr env in
+    begin
+      match (ident_typ, typ_e) with
+      | Tunknown, typ_e ->
+        let env = Env.set_type ident_name typ_e env in
+        Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
+      | ident_typ, typ_e when ident_typ = typ_e ->
+        let env = Env.set_type ident_name typ_e env in
+        Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
+      | _ -> error loc "attempt to perform an assignment with different types"
+    end
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin

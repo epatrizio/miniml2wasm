@@ -1,0 +1,5 @@
+let x = 40;
+let y : i32 = 2 in
+  print x + y;
+print x;
+print y   (* not in global scope! *)

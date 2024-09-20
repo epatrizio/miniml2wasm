@@ -3,9 +3,9 @@
 module SMap = Map.Make (String)
 
 type 'a t =
-  { (* values : 'a ref SMap.t
-       ; globals : string SMap.t *)
+  { (* values : 'a ref SMap.t *)
     types : 'a SMap.t
+  ; globals : string SMap.t
   ; locals : string SMap.t
   }
 
@@ -15,6 +15,11 @@ let fresh =
     incr count;
     Format.sprintf "v%d" !count
 
+let add_global n env =
+  let fresh_name = fresh () in
+  let globals = SMap.add n fresh_name env.globals in
+  (fresh_name, { env with globals })
+
 let add_local n env =
   let fresh_name = fresh () in
   let locals = SMap.add n fresh_name env.locals in
@@ -23,7 +28,11 @@ let add_local n env =
 let get_name n env =
   match SMap.find_opt n env.locals with
   | Some name -> Ok name
-  | None -> Error (Format.sprintf "ident: %s not found in env.locals" n)
+  | None -> (
+    match SMap.find_opt n env.globals with
+    | Some name -> Ok name
+    | None ->
+      Error (Format.sprintf "ident: %s not found or not in current scope" n) )
 
 let set_type n typ env =
   let types = SMap.add n typ env.types in
@@ -36,5 +45,6 @@ let get_type n env =
 
 let empty () =
   let types = SMap.empty in
+  let globals = SMap.empty in
   let locals = SMap.empty in
-  { types; locals }
+  { types; globals; locals }

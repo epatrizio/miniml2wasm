@@ -3,7 +3,7 @@
 <!-- $MDX file=test/42.mml -->
 ```ml
 (* type is optional, it can be inferred *)
-(* let x = 42 in *)
-let x : i32 = 42 in
-  print x
+let x = 40;           (* global scope *)
+let y : i32 = 2 in    (* local scope *)
+  print x + y
 ```

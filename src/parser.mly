@@ -38,6 +38,7 @@ let prog :=
   | ~ = block; EOF; <>
 
 let stmt_bis :=
+  | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | PRINT; ~ = expr; <Sprint>
 

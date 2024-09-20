@@ -52,6 +52,7 @@ and block =
 and stmt = location * stmt'
 
 and stmt' =
+  | Slet of ident * expr
   | Swhile of expr * block
   | Sprint of expr
 
@@ -118,6 +119,10 @@ let rec print_expr fmt (_, _, expr) =
 
 and print_stmt fmt (_, stmt) =
   match stmt with
+  | Slet (ident, expr) ->
+    fprintf fmt {|let %a = %a|}
+      (print_ident ~typ_display:true)
+      ident print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sprint expr -> fprintf fmt {|print %a|} print_expr expr

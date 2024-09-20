@@ -1,13 +1,19 @@
 scoping error:
   $ dune exec miniml2wasm -- scope_1.mml
   scope analysing ...
-  ident: y not found in env.locals
+  ident: y not found or not in current scope
   $ dune exec miniml2wasm -- scope_2.mml
   scope analysing ...
-  ident: y not found in env.locals
+  ident: y not found or not in current scope
   $ dune exec miniml2wasm -- scope_3.mml
   scope analysing ...
-  ident: y not found in env.locals
+  ident: y not found or not in current scope
   $ dune exec miniml2wasm -- scope_4.mml
   scope analysing ...
-  ident: y not found in env.locals
+  ident: x not found or not in current scope
+  $ dune exec miniml2wasm -- scope_5.mml
+  scope analysing ...
+  ident: x not found or not in current scope
+  $ dune exec miniml2wasm -- scope_6.mml
+  scope analysing ...
+  ident: y not found or not in current scope
