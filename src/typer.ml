@@ -134,4 +134,6 @@ and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, Sprint expr), env)
 
-and typecheck_prog prog env = typecheck_expr prog env
+let typecheck_prog prog env : (prog * typ Env.t, _) result =
+  let* _typ, prog, env = typecheck_block prog env in
+  Ok (prog, env)

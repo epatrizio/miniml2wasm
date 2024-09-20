@@ -35,7 +35,7 @@ open Ast
 %%
 
 let prog :=
-  | ~ = expr; EOF; <>
+  | ~ = block; EOF; <>
 
 let stmt_bis :=
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>

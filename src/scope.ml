@@ -54,4 +54,4 @@ and analyse_stmt (loc, stmt') env =
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sprint expr), env)
 
-let analysis = analyse_expr
+let analysis = analyse_block

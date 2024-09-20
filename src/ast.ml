@@ -55,7 +55,7 @@ and stmt' =
   | Swhile of expr * block
   | Sprint of expr
 
-type prog = expr
+type prog = block
 
 (* pretty printer *)
 
@@ -127,7 +127,7 @@ and print_block fmt = function
   | Bseq (expr, block) ->
     fprintf fmt {|%a;@.%a|} print_expr expr print_block block
 
-let print_prog fmt expr = fprintf fmt {|@[<v 2>%a@]@.|} print_expr expr
+let print_prog fmt block = fprintf fmt {|@[<v 2>%a@]@.|} print_block block
 
 let str_loc (loc : location) =
   let start, _end = loc in
