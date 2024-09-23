@@ -78,10 +78,7 @@ let print_ident fmt ?(typ_display = false) ((typ, name) as _ident : ident) =
 let print_unop fmt unop =
   pp_print_string fmt @@ match unop with Unot -> "not" | Uminus -> "-"
 
-let print_binop fmt binop =
-  pp_print_string fmt
-  @@
-  match binop with
+let str_binop = function
   | Band -> "&&"
   | Bor -> "||"
   | Badd -> "+"
@@ -94,6 +91,8 @@ let print_binop fmt binop =
   | Ble -> "<="
   | Bgt -> ">"
   | Bge -> ">="
+
+let print_binop fmt binop = pp_print_string fmt (str_binop binop)
 
 let print_cst fmt = function
   | Cunit -> pp_print_string fmt "()"

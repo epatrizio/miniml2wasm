@@ -14,7 +14,49 @@ let typecheck_cst = function
   | Cbool _b -> Tbool
   | Ci32 _i32 -> Ti32
 
-let rec typecheck_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
+let rec typecheck_unop_expr (loc, _typ, expr') env :
+  (expr * typ Env.t, _) result =
+  match expr' with
+  | Eunop (Unot, expr) -> (
+    let* (l, t, expr'), env = typecheck_expr expr env in
+    match t with
+    | Tbool -> Ok ((loc, Tbool, Eunop (Unot, (l, t, expr'))), env)
+    | _ -> error loc "attempt to perform unop 'not' on a non boolean type" )
+  | Eunop (Uminus, expr) -> (
+    let* (l, t, expr'), env = typecheck_expr expr env in
+    match t with
+    | Ti32 -> Ok ((loc, Ti32, Eunop (Uminus, (l, t, expr'))), env)
+    | _ -> error loc "attempt to perform unop '-' on a non i32 type" )
+  | _ -> assert false (* call error *)
+
+and typecheck_binop_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
+  let typecheck_binop_arith_expr binop e1 e2 env =
+    let* (l1, typ1, e1'), env = typecheck_expr e1 env in
+    let* (l2, typ2, e2'), env = typecheck_expr e2 env in
+    match (typ1, typ2) with
+    | Ti32, Ti32 ->
+      Ok ((loc, Ti32, Ebinop ((l1, typ1, e1'), binop, (l2, typ2, e2'))), env)
+    | _ ->
+      let message =
+        Format.sprintf
+          {|attempt to perform an arithmetic binop '%s' on a non i32 types|}
+          (str_binop binop)
+      in
+      error loc message
+  in
+  match expr' with
+  | Ebinop (e1, Badd, e2) -> typecheck_binop_arith_expr Badd e1 e2 env
+  | Ebinop (e1, Bsub, e2) -> typecheck_binop_arith_expr Bsub e1 e2 env
+  | Ebinop (e1, Bmul, e2) -> typecheck_binop_arith_expr Bmul e1 e2 env
+  | Ebinop (e1, Bdiv, e2) -> typecheck_binop_arith_expr Bdiv e1 e2 env
+  | Ebinop (_e1, binop, _e2) ->
+    let message =
+      Format.sprintf {|binop '%s': to be implemented!|} (str_binop binop)
+    in
+    error loc message
+  | _ -> assert false (* call error *)
+
+and typecheck_expr (loc, typ, expr') env : (expr * typ Env.t, _) result =
   match expr' with
   | Ecst c as cst ->
     let typ = typecheck_cst c in
@@ -22,31 +64,10 @@ let rec typecheck_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
   | Eident (_typ, name) as ident ->
     let* typ = Env.get_type name env in
     Ok ((loc, typ, ident), env)
-  | Eunop (unop, expr) ->
-    let* (l, t, expr'), env = typecheck_expr expr env in
-    begin
-      match unop with
-      | Unot -> (
-        match t with
-        | Tbool -> Ok ((loc, Tbool, Eunop (Unot, (l, t, expr'))), env)
-        | _ -> error loc "attempt to perform unop 'not' on a non boolean type" )
-      | Uminus -> (
-        match t with
-        | Ti32 -> Ok ((loc, Ti32, Eunop (Uminus, (l, t, expr'))), env)
-        | _ -> error loc "attempt to perform unop '-' on a non i32 type" )
-    end
-  | Ebinop (e1, binop, e2) ->
-    let* (l1, typ1, e1'), env = typecheck_expr e1 env in
-    let* (l2, typ2, e2'), env = typecheck_expr e2 env in
-    begin
-      match binop with
-      | Badd -> (
-        match (typ1, typ2) with
-        | Ti32, Ti32 ->
-          Ok ((loc, Ti32, Ebinop ((l1, typ1, e1'), Badd, (l2, typ2, e2'))), env)
-        | _ -> error loc "attempt to perform binop 'add' on a non i32 types" )
-      | _ -> assert false (* TODO *)
-    end
+  | Eunop (_unop, _expr) as unop_expr ->
+    typecheck_unop_expr (loc, typ, unop_expr) env
+  | Ebinop (_e1, _binop, _e2) as binop_expr ->
+    typecheck_binop_expr (loc, typ, binop_expr) env
   | Eblock block ->
     let* typ_b, block, env = typecheck_block block env in
     Ok ((loc, typ_b, Eblock block), env)
@@ -80,15 +101,7 @@ let rec typecheck_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
     let* (loc_e1, typ_e1, e1'), env = typecheck_expr e1 env in
     begin
       match (ident_typ, typ_e1) with
-      | Tunknown, typ_e1 ->
-        let env = Env.set_type ident_name typ_e1 env in
-        let* (l, t, e2'), env = typecheck_expr e2 env in
-        Ok
-          ( ( loc
-            , t
-            , Elet ((typ_e1, ident_name), (loc_e1, typ_e1, e1'), (l, t, e2')) )
-          , env )
-      | ident_typ, typ_e1 when ident_typ = typ_e1 ->
+      | ident_typ, typ_e1 when ident_typ = typ_e1 || ident_typ = Tunknown ->
         let env = Env.set_type ident_name typ_e1 env in
         let* (l, t, e2'), env = typecheck_expr e2 env in
         Ok
@@ -121,10 +134,7 @@ and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
     let* (loc_e, typ_e, e'), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
-      | Tunknown, typ_e ->
-        let env = Env.set_type ident_name typ_e env in
-        Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
-      | ident_typ, typ_e when ident_typ = typ_e ->
+      | ident_typ, typ_e when ident_typ = typ_e || ident_typ = Tunknown ->
         let env = Env.set_type ident_name typ_e env in
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
