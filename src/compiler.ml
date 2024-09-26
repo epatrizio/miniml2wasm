@@ -6,8 +6,12 @@ open Syntax
 let compile_expr _expr env = Ok ("", env)
 
 let compile prog env =
-  let magic = "\x00\x61\x73\x6D" in
-  let version = "\x01\x00\x00\x00" in
+  let wasm_buf = Buffer.create 256 in
+  (* magic *)
+  Buffer.add_string wasm_buf "\x00\x61\x73\x6d";
+  (* version *)
+  Buffer.add_string wasm_buf "\x01\x00\x00\x00";
   let* wasm, env = compile_expr prog env in
-  let wasm_bytes = Format.sprintf {|%s%s%s|} magic version wasm in
-  Ok (wasm_bytes, env)
+  Buffer.add_string wasm_buf wasm;
+  let wasm_str = Buffer.contents wasm_buf in
+  Ok (wasm_str, env)

@@ -17,7 +17,7 @@ let wasm_file source_code_file wasm_bytes =
   let target_wasm_file =
     Fpath.add_ext "wasm" (Fpath.rem_ext source_code_file)
   in
-  let filename = "wasm/" ^ Fpath.filename target_wasm_file in
+  let filename = "_wasm/" ^ Fpath.filename target_wasm_file in
   let message = Format.sprintf {|compilation target file %s: done!|} filename in
   let oc = Out_channel.open_bin filename in
   Out_channel.output_string oc wasm_bytes;
@@ -28,6 +28,7 @@ let process source_code_file debug =
   let ic = open_in source_code_file in
   let lexbuf = Sedlexing.Utf8.from_channel ic in
   try
+    print_endline "parsing ...";
     Sedlexing.set_filename lexbuf source_code_file;
     let lexer = Sedlexing.with_tokenizer Lexer.token lexbuf in
     let parser = MenhirLib.Convert.Simplified.traditional2revised Parser.prog in
@@ -40,10 +41,10 @@ let process source_code_file debug =
     let env = Env.empty () in
     print_endline "scope analysing ...";
     let* prog, env = Scope.analysis prog env in
-    print_endline "typing ...";
+    print_endline "typechecking ...";
     let* prog, env = Typer.typecheck_prog prog env in
     if debug then begin
-      print_endline "program after typing and scope analysis:";
+      print_endline "program after typechecking and scope analysis:";
       Ast.print_prog Format.std_formatter prog
     end;
     print_endline "compiling ...";
@@ -56,7 +57,7 @@ let process source_code_file debug =
   | Parser.Error ->
     let loc = Sedlexing.lexing_positions lexbuf in
     Error ("Syntax error: " ^ Ast.str_loc loc)
-  | Typer.Typing_error message -> Error ("Typing error: " ^ message)
+  | Typer.Typing_error message -> Error ("Typechecking error: " ^ message)
 
 (* Compiler entry point *)
 let () =
