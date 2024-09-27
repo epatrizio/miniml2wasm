@@ -65,7 +65,7 @@ let write_section buf id content =
     Buffer.add_buffer buf content
   end
 
-let compile_expr (loc, _typ, expr') env =
+let rec compile_expr (loc, typ, expr') env =
   let buf = Buffer.create 16 in
   match expr' with
   | Ecst Cunit -> Ok (buf, env)
@@ -78,6 +78,41 @@ let compile_expr (loc, _typ, expr') env =
     incr stack_nb_elts;
     Buffer.add_char buf '\x41';
     write_s32 buf i32;
+    Ok (buf, env)
+  | Eunop (Unot, expr) ->
+    let* expr_buf, env = compile_expr expr env in
+    Buffer.add_buffer buf expr_buf;
+    Buffer.add_char buf '\x45';
+    (* i32.eqz *)
+    Ok (buf, env)
+  | Eunop (Uminus, expr) ->
+    compile_expr
+      (loc, typ, Ebinop ((loc, Ti32, Ecst (Ci32 Int32.minus_one)), Bmul, expr))
+      env
+  | Ebinop (e1, Band, e2) ->
+    let* e1_buf, env = compile_expr e1 env in
+    let* e2_buf, env = compile_expr e2 env in
+    Buffer.add_buffer buf e1_buf;
+    Buffer.add_buffer buf e2_buf;
+    Buffer.add_char buf '\x71';
+    (* i32.and *)
+    Ok (buf, env)
+  | Ebinop (e1, Bor, e2) ->
+    let* e1_buf, env = compile_expr e1 env in
+    let* e2_buf, env = compile_expr e2 env in
+    Buffer.add_buffer buf e1_buf;
+    Buffer.add_buffer buf e2_buf;
+    Buffer.add_char buf '\x72';
+    (* i32.or *)
+    Ok (buf, env)
+  | Ebinop (e1, Bmul, e2) ->
+    let* e1_buf, env = compile_expr e1 env in
+    let* e2_buf, env = compile_expr e2 env in
+    Buffer.add_buffer buf e1_buf;
+    Buffer.add_buffer buf e2_buf;
+    Buffer.add_char buf '\x6c';
+    (* i32.mul *)
+    decr stack_nb_elts;
     Ok (buf, env)
   | _ -> error loc "expression to be implemented!"
 
