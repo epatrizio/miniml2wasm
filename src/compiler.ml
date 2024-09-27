@@ -4,8 +4,16 @@
    https://github.com/OCamlPro/owi/blob/main/src/ast/binary_encoder.ml
    owi (developed by my friends at OCamlPro): A WebAssembly Swissknife & cross-language bugfinder *)
 
-(* open Ast *)
+open Ast
 open Syntax
+
+exception Compiling_error of string
+
+let error loc message =
+  let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
+  raise (Compiling_error message)
+
+let stack_nb_elts = ref 0
 
 (* add byte from int (ascii code) *)
 let write_byte buf i =
@@ -27,6 +35,21 @@ let write_u32_of_int buf i =
   let i = Int32.of_int i in
   write_u32 buf i
 
+let rec write_s64 buf i =
+  let b = Int64.to_int (Int64.logand i 0x7fL) in
+  if Int64.compare (-64L) i <= 0 && Int64.compare i 64L < 0 then
+    write_byte buf b
+  else begin
+    write_byte buf (b lor 0x80);
+    write_s64 buf (Int64.shift_right i 7)
+  end
+
+let write_s32 buf i = write_s64 buf (Int64.of_int32 i)
+
+let write_s32_of_int buf i =
+  let i = Int32.of_int i in
+  write_s32 buf i
+
 let write_vector buf datas =
   let vector_buf = Buffer.create 16 in
   let len = List.length datas in
@@ -36,12 +59,27 @@ let write_vector buf datas =
 
 let write_section buf id content =
   let section_len = Buffer.length content in
-  print_int section_len;
   if section_len > 0 then begin
     Buffer.add_char buf id;
     write_u32_of_int buf section_len;
     Buffer.add_buffer buf content
   end
+
+let compile_expr (loc, _typ, expr') env =
+  let buf = Buffer.create 16 in
+  match expr' with
+  | Ecst Cunit -> Ok (buf, env)
+  | Ecst (Cbool b) ->
+    incr stack_nb_elts;
+    Buffer.add_char buf '\x41';
+    write_u32_of_int buf (if b then 1 else 0);
+    Ok (buf, env)
+  | Ecst (Ci32 i32) ->
+    incr stack_nb_elts;
+    Buffer.add_char buf '\x41';
+    write_s32 buf i32;
+    Ok (buf, env)
+  | _ -> error loc "expression to be implemented!"
 
 let encode_functype arg_resulttypes ret_resulttypes =
   let buf = Buffer.create 16 in
@@ -53,9 +91,35 @@ let encode_functype arg_resulttypes ret_resulttypes =
 let encode_empty_code () =
   let buf = Buffer.create 16 in
   write_u32_of_int buf 2;
+  (* locals *)
   write_vector buf [];
+  (* explicit end opcode *)
   Buffer.add_char buf '\x0b';
   buf
+
+let rec encode_prog buf prog env =
+  let* code_buf, env =
+    begin
+      match prog with
+      | Bexpr expr -> compile_expr expr env
+      | Bseq (expr, block) ->
+        let* code_buf, env = compile_expr expr env in
+        encode_prog code_buf block env
+    end
+  in
+  while !stack_nb_elts > 0 do
+    (* drop: the stack must be empty at the end *)
+    Buffer.add_char code_buf '\x1a';
+    decr stack_nb_elts
+  done;
+  Buffer.add_char code_buf '\x0b';
+  let code_len = Buffer.length code_buf in
+  (* code_len + 1: empty locals *)
+  let code_len = code_len + 1 in
+  write_u32_of_int buf code_len;
+  write_vector buf [];
+  Buffer.add_buffer buf code_buf;
+  Ok (buf, env)
 
 let write_type_section buf functypes =
   let type_buf = Buffer.create 16 in
@@ -80,22 +144,22 @@ let write_code_section buf codes =
   write_vector code_buf codes;
   write_section buf '\x0a' code_buf
 
-let write_start buf =
+let write_start_section buf =
   let start_buf = Buffer.create 2 in
   (* hard-coded: start function idx = 0 *)
   write_u32_of_int start_buf 0;
   write_section buf '\x08' start_buf
 
-let write_start_function buf =
-  let body_buf = encode_empty_code () in
+let write_start_function buf prog env =
   let functype_buf = encode_functype [] [] in
+  let code_buf = Buffer.create 256 in
+  let* code_buf, _env = encode_prog code_buf prog env in
   write_type_section buf [ functype_buf ];
   (* hard-coded: start function idx = 0 *)
   write_function_section buf [ 0 ];
-  write_start buf;
-  write_code_section buf [ body_buf ]
-
-let compile_expr _expr env = Ok ("", env)
+  write_start_section buf;
+  write_code_section buf [ code_buf ];
+  Ok (buf, env)
 
 let compile prog env =
   let wasm_buf = Buffer.create 256 in
@@ -103,8 +167,7 @@ let compile prog env =
   Buffer.add_string wasm_buf "\x00\x61\x73\x6d";
   (* version *)
   Buffer.add_string wasm_buf "\x01\x00\x00\x00";
-  write_start_function wasm_buf;
-  let* wasm, env = compile_expr prog env in
-  Buffer.add_string wasm_buf wasm;
+  (* First basic approach: prog is fully compile in start function *)
+  let* wasm_buf, env = write_start_function wasm_buf prog env in
   let wasm_str = Buffer.contents wasm_buf in
   Ok (wasm_str, env)
