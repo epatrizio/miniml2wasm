@@ -1,8 +1,8 @@
 (* WebAssembly (Wasm) compiler *)
 
 (* source of some basic encoding functions :
-https://github.com/OCamlPro/owi/blob/main/src/ast/binary_encoder.ml
-owi (developed by my friends at OCamlPro): A WebAssembly Swissknife & cross-language bugfinder *)
+   https://github.com/OCamlPro/owi/blob/main/src/ast/binary_encoder.ml
+   owi (developed by my friends at OCamlPro): A WebAssembly Swissknife & cross-language bugfinder *)
 
 (* open Ast *)
 open Syntax
@@ -43,6 +43,43 @@ let write_section buf id content =
     Buffer.add_buffer buf content
   end
 
+let encode_functype arg_resulttypes ret_resulttypes =
+  let buf = Buffer.create 16 in
+  Buffer.add_char buf '\x60';
+  write_vector buf arg_resulttypes;
+  write_vector buf ret_resulttypes;
+  buf
+
+let encode_empty_code () =
+  let buf = Buffer.create 16 in
+  write_u32_of_int buf 2;
+  write_vector buf [];
+  Buffer.add_char buf '\x0b';
+  buf
+
+let write_type_section buf functypes =
+  let type_buf = Buffer.create 16 in
+  write_vector type_buf functypes;
+  write_section buf '\x01' type_buf
+
+let write_function_section buf typeidxs =
+  let function_buf = Buffer.create 16 in
+  let typeidxs =
+    List.fold_left
+      (fun typeidx_l idx ->
+        let typeidx_buf = Buffer.create 2 in
+        write_u32_of_int typeidx_buf idx;
+        typeidx_l @ [ typeidx_buf ] )
+      [] typeidxs
+  in
+  write_vector function_buf typeidxs;
+  write_section buf '\x03' function_buf
+
+let write_code_section buf codes =
+  let code_buf = Buffer.create 16 in
+  write_vector code_buf codes;
+  write_section buf '\x0a' code_buf
+
 let write_start buf =
   let start_buf = Buffer.create 2 in
   (* hard-coded: start function idx = 0 *)
@@ -50,26 +87,13 @@ let write_start buf =
   write_section buf '\x08' start_buf
 
 let write_start_function buf =
-  let type_buf = Buffer.create 16 in
-  let func_buf = Buffer.create 16 in
-  let code_buf = Buffer.create 16 in
-  let typeidx_buf = Buffer.create 2 in
-  let functype_buf = Buffer.create 16 in
-  let body_buf = Buffer.create 16 in
-  Buffer.add_char functype_buf '\x60';
-  write_vector functype_buf [];
-  write_vector functype_buf [];
-  write_vector type_buf [ functype_buf ];
-  write_section buf '\x01' type_buf;
-  write_u32_of_int typeidx_buf 0;
-  write_vector func_buf [ typeidx_buf ];
-  write_section buf '\x03' func_buf;
+  let body_buf = encode_empty_code () in
+  let functype_buf = encode_functype [] [] in
+  write_type_section buf [ functype_buf ];
+  (* hard-coded: start function idx = 0 *)
+  write_function_section buf [ 0 ];
   write_start buf;
-  write_u32_of_int body_buf 2;
-  write_vector body_buf [];
-  Buffer.add_char body_buf '\x0b';
-  write_vector code_buf [ body_buf ];
-  write_section buf '\x0a' code_buf
+  write_code_section buf [ body_buf ]
 
 let compile_expr _expr env = Ok ("", env)
 
