@@ -89,32 +89,34 @@ let rec compile_expr (loc, typ, expr') env =
     compile_expr
       (loc, typ, Ebinop ((loc, Ti32, Ecst (Ci32 Int32.minus_one)), Bmul, expr))
       env
-  | Ebinop (e1, Band, e2) ->
-    let* e1_buf, env = compile_expr e1 env in
-    let* e2_buf, env = compile_expr e2 env in
-    Buffer.add_buffer buf e1_buf;
-    Buffer.add_buffer buf e2_buf;
-    Buffer.add_char buf '\x71';
-    (* i32.and *)
-    Ok (buf, env)
-  | Ebinop (e1, Bor, e2) ->
-    let* e1_buf, env = compile_expr e1 env in
-    let* e2_buf, env = compile_expr e2 env in
-    Buffer.add_buffer buf e1_buf;
-    Buffer.add_buffer buf e2_buf;
-    Buffer.add_char buf '\x72';
-    (* i32.or *)
-    Ok (buf, env)
-  | Ebinop (e1, Bmul, e2) ->
-    let* e1_buf, env = compile_expr e1 env in
-    let* e2_buf, env = compile_expr e2 env in
-    Buffer.add_buffer buf e1_buf;
-    Buffer.add_buffer buf e2_buf;
-    Buffer.add_char buf '\x6c';
-    (* i32.mul *)
-    decr stack_nb_elts;
-    Ok (buf, env)
+  | Ebinop (e1, binop, e2) -> compile_binop buf e1 binop e2 env
   | _ -> error loc "expression to be implemented!"
+
+and compile_binop buf e1 binop e2 env =
+  let* e1_buf, env = compile_expr e1 env in
+  let* e2_buf, env = compile_expr e2 env in
+  Buffer.add_buffer buf e1_buf;
+  Buffer.add_buffer buf e2_buf;
+  (* i32.and ... *)
+  (* Int32: signed intergers > _s operators *)
+  (* div_s, lt_s, gt_s ... *)
+  begin
+    match binop with
+    | Band -> Buffer.add_char buf '\x71'
+    | Bor -> Buffer.add_char buf '\x72'
+    | Badd -> Buffer.add_char buf '\x6a'
+    | Bsub -> Buffer.add_char buf '\x6b'
+    | Bmul -> Buffer.add_char buf '\x6c'
+    | Bdiv -> Buffer.add_char buf '\x6d'
+    | Beq -> Buffer.add_char buf '\x46'
+    | Bneq -> Buffer.add_char buf '\x47'
+    | Blt -> Buffer.add_char buf '\x48'
+    | Ble -> Buffer.add_char buf '\x4c'
+    | Bgt -> Buffer.add_char buf '\x4a'
+    | Bge -> Buffer.add_char buf '\x4e'
+  end;
+  decr stack_nb_elts;
+  Ok (buf, env)
 
 let encode_functype arg_resulttypes ret_resulttypes =
   let buf = Buffer.create 16 in
