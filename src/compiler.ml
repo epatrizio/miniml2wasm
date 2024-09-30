@@ -90,6 +90,16 @@ let rec compile_expr (loc, typ, expr') env =
       (loc, typ, Ebinop ((loc, Ti32, Ecst (Ci32 Int32.minus_one)), Bmul, expr))
       env
   | Ebinop (e1, binop, e2) -> compile_binop buf e1 binop e2 env
+  | Eblock block -> begin
+    match block with
+    | Bexpr expr -> compile_expr expr env
+    | Bseq (expr, block) ->
+      let* expr_buf, env = compile_expr expr env in
+      let* block_buf, env = compile_expr (loc, typ, Eblock block) env in
+      Buffer.add_buffer buf expr_buf;
+      Buffer.add_buffer buf block_buf;
+      Ok (buf, env)
+  end
   | _ -> error loc "expression to be implemented!"
 
 and compile_binop buf e1 binop e2 env =
