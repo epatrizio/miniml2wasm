@@ -101,18 +101,15 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
       (loc, typ, Ebinop ((loc, Ti32, Ecst (Ci32 Int32.minus_one)), Bmul, expr))
       stack_nb_elts env
   | Ebinop (e1, binop, e2) -> compile_binop buf stack_nb_elts e1 binop e2 env
-  | Eblock block -> begin
-    match block with
-    | Bexpr expr -> compile_expr expr stack_nb_elts env
-    | Bseq (expr, block) ->
-      let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
-      let* block_buf, stack_nb_elts, env =
-        compile_expr (loc, typ, Eblock block) stack_nb_elts env
-      in
-      Buffer.add_buffer buf expr_buf;
-      Buffer.add_buffer buf block_buf;
-      Ok (buf, stack_nb_elts, env)
-  end
+  | Eblock block ->
+    let* block_buf, typ, stack_nb_elts, env =
+      compile_block block stack_nb_elts env
+    in
+    Buffer.add_char buf '\x02';
+    write_blocktype buf (Valtyp typ);
+    Buffer.add_buffer buf block_buf;
+    Buffer.add_char buf '\x0b';
+    Ok (buf, stack_nb_elts, env)
   | Eif (e_cond, e_then, e_else) ->
     let _loc, typ, _expr' = e_then in
     let* e_cond_buf, stack_nb_elts, env =
@@ -134,6 +131,23 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
   | _ -> error loc "expression to be implemented!"
+
+and compile_block block stack_nb_elts env =
+  match block with
+  | Bexpr (loc, typ, expr') ->
+    let* buf, stack_nb_elts, env =
+      compile_expr (loc, typ, expr') stack_nb_elts env
+    in
+    Ok (buf, typ, stack_nb_elts, env)
+  | Bseq ((loc, typ, expr'), block) ->
+    let* buf, stack_nb_elts, env =
+      compile_expr (loc, typ, expr') stack_nb_elts env
+    in
+    let* block_buf, typ, stack_nb_elts, env =
+      compile_block block stack_nb_elts env
+    in
+    Buffer.add_buffer buf block_buf;
+    Ok (buf, typ, stack_nb_elts, env)
 
 and compile_binop buf stack_nb_elts e1 binop e2 env =
   let* e1_buf, stack_nb_elts, env = compile_expr e1 stack_nb_elts env in
