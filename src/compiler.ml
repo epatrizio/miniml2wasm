@@ -7,6 +7,11 @@
 open Ast
 open Syntax
 
+type blocktype =
+  | Empty
+  | Valtyp of typ
+  | S33 of int64
+
 exception Compiling_error of string
 
 let error loc message =
@@ -65,6 +70,16 @@ let write_section buf id content =
     Buffer.add_buffer buf content
   end
 
+let write_numtype buf = function
+  | Tbool | Ti32 -> Buffer.add_char buf '\x7f'
+  | Tunit | Tunknown -> ()
+
+let write_valtype = write_numtype
+
+let write_blocktype buf = function
+  | Empty | S33 _ -> ()
+  | Valtyp typ -> write_valtype buf typ
+
 let rec compile_expr (loc, typ, expr') env =
   let buf = Buffer.create 16 in
   match expr' with
@@ -100,6 +115,20 @@ let rec compile_expr (loc, typ, expr') env =
       Buffer.add_buffer buf block_buf;
       Ok (buf, env)
   end
+  | Eif (e_cond, e_then, e_else) ->
+    let _loc, typ, _expr' = e_then in
+    let* e_cond_buf, env = compile_expr e_cond env in
+    let* e_then_buf, env = compile_expr e_then env in
+    let* e_else_buf, env = compile_expr e_else env in
+    Buffer.add_buffer buf e_cond_buf;
+    Buffer.add_char buf '\x04';
+    write_blocktype buf (Valtyp typ);
+    Buffer.add_buffer buf e_then_buf;
+    Buffer.add_char buf '\x05';
+    Buffer.add_buffer buf e_else_buf;
+    Buffer.add_char buf '\x0b';
+    decr stack_nb_elts;
+    Ok (buf, env)
   | _ -> error loc "expression to be implemented!"
 
 and compile_binop buf e1 binop e2 env =
