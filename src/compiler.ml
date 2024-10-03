@@ -18,8 +18,6 @@ let error loc message =
   let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
   raise (Compiling_error message)
 
-let stack_nb_elts = ref 0
-
 (* add byte from int (ascii code) *)
 let write_byte buf i =
   let c = Char.chr (i land 0xff) in
@@ -80,46 +78,53 @@ let write_blocktype buf = function
   | Empty | S33 _ -> ()
   | Valtyp typ -> write_valtype buf typ
 
-let rec compile_expr (loc, typ, expr') env =
+let rec compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
   match expr' with
-  | Ecst Cunit -> Ok (buf, env)
+  | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
   | Ecst (Cbool b) ->
-    incr stack_nb_elts;
     Buffer.add_char buf '\x41';
     write_u32_of_int buf (if b then 1 else 0);
-    Ok (buf, env)
+    Ok (buf, stack_nb_elts + 1, env)
   | Ecst (Ci32 i32) ->
-    incr stack_nb_elts;
     Buffer.add_char buf '\x41';
     write_s32 buf i32;
-    Ok (buf, env)
+    Ok (buf, stack_nb_elts + 1, env)
   | Eunop (Unot, expr) ->
-    let* expr_buf, env = compile_expr expr env in
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
     Buffer.add_char buf '\x45';
     (* i32.eqz *)
-    Ok (buf, env)
+    Ok (buf, stack_nb_elts, env)
   | Eunop (Uminus, expr) ->
     compile_expr
       (loc, typ, Ebinop ((loc, Ti32, Ecst (Ci32 Int32.minus_one)), Bmul, expr))
-      env
-  | Ebinop (e1, binop, e2) -> compile_binop buf e1 binop e2 env
+      stack_nb_elts env
+  | Ebinop (e1, binop, e2) -> compile_binop buf stack_nb_elts e1 binop e2 env
   | Eblock block -> begin
     match block with
-    | Bexpr expr -> compile_expr expr env
+    | Bexpr expr -> compile_expr expr stack_nb_elts env
     | Bseq (expr, block) ->
-      let* expr_buf, env = compile_expr expr env in
-      let* block_buf, env = compile_expr (loc, typ, Eblock block) env in
+      let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+      let* block_buf, stack_nb_elts, env =
+        compile_expr (loc, typ, Eblock block) stack_nb_elts env
+      in
       Buffer.add_buffer buf expr_buf;
       Buffer.add_buffer buf block_buf;
-      Ok (buf, env)
+      Ok (buf, stack_nb_elts, env)
   end
   | Eif (e_cond, e_then, e_else) ->
     let _loc, typ, _expr' = e_then in
-    let* e_cond_buf, env = compile_expr e_cond env in
-    let* e_then_buf, env = compile_expr e_then env in
-    let* e_else_buf, env = compile_expr e_else env in
+    let* e_cond_buf, stack_nb_elts, env =
+      compile_expr e_cond stack_nb_elts env
+    in
+    let* e_then_buf, stack_nb_elts, env =
+      compile_expr e_then stack_nb_elts env
+    in
+    let* e_else_buf, _stack_nb_elts, env =
+      compile_expr e_else stack_nb_elts env
+    in
+    (* _stack_nb_elts: same stack state on both branches *)
     Buffer.add_buffer buf e_cond_buf;
     Buffer.add_char buf '\x04';
     write_blocktype buf (Valtyp typ);
@@ -127,13 +132,12 @@ let rec compile_expr (loc, typ, expr') env =
     Buffer.add_char buf '\x05';
     Buffer.add_buffer buf e_else_buf;
     Buffer.add_char buf '\x0b';
-    decr stack_nb_elts;
-    Ok (buf, env)
+    Ok (buf, stack_nb_elts - 1, env)
   | _ -> error loc "expression to be implemented!"
 
-and compile_binop buf e1 binop e2 env =
-  let* e1_buf, env = compile_expr e1 env in
-  let* e2_buf, env = compile_expr e2 env in
+and compile_binop buf stack_nb_elts e1 binop e2 env =
+  let* e1_buf, stack_nb_elts, env = compile_expr e1 stack_nb_elts env in
+  let* e2_buf, stack_nb_elts, env = compile_expr e2 stack_nb_elts env in
   Buffer.add_buffer buf e1_buf;
   Buffer.add_buffer buf e2_buf;
   (* i32.and ... *)
@@ -154,8 +158,7 @@ and compile_binop buf e1 binop e2 env =
     | Bgt -> Buffer.add_char buf '\x4a'
     | Bge -> Buffer.add_char buf '\x4e'
   end;
-  decr stack_nb_elts;
-  Ok (buf, env)
+  Ok (buf, stack_nb_elts - 1, env)
 
 let encode_functype arg_resulttypes ret_resulttypes =
   let buf = Buffer.create 16 in
@@ -173,21 +176,34 @@ let encode_empty_code () =
   Buffer.add_char buf '\x0b';
   buf
 
-let rec encode_prog buf prog env =
-  let* code_buf, env =
+let encode_prog prog env =
+  let rec drop buf n =
+    if n = 0 then ()
+    else (
+      Buffer.add_char buf '\x1a';
+      drop buf (n - 1) )
+  in
+  let rec compile_prog buf prog stack_nb_elts env =
     begin
       match prog with
-      | Bexpr expr -> compile_expr expr env
+      | Bexpr expr ->
+        let* expr_buf, stack_nb_elts, env =
+          compile_expr expr stack_nb_elts env
+        in
+        Buffer.add_buffer buf expr_buf;
+        Ok (buf, stack_nb_elts, env)
       | Bseq (expr, block) ->
-        let* code_buf, env = compile_expr expr env in
-        encode_prog code_buf block env
+        let* expr_buf, stack_nb_elts, env =
+          compile_expr expr stack_nb_elts env
+        in
+        Buffer.add_buffer buf expr_buf;
+        compile_prog buf block stack_nb_elts env
     end
   in
-  while !stack_nb_elts > 0 do
-    (* drop: the stack must be empty at the end *)
-    Buffer.add_char code_buf '\x1a';
-    decr stack_nb_elts
-  done;
+  let buf = Buffer.create 256 in
+  let code_buf = Buffer.create 256 in
+  let* code_buf, stack_nb_elts, env = compile_prog code_buf prog 0 env in
+  drop code_buf stack_nb_elts;
   Buffer.add_char code_buf '\x0b';
   let code_len = Buffer.length code_buf in
   (* code_len + 1: empty locals *)
@@ -228,8 +244,7 @@ let write_start_section buf =
 
 let write_start_function buf prog env =
   let functype_buf = encode_functype [] [] in
-  let code_buf = Buffer.create 256 in
-  let* code_buf, _env = encode_prog code_buf prog env in
+  let* code_buf, _env = encode_prog prog env in
   write_type_section buf [ functype_buf ];
   (* hard-coded: start function idx = 0 *)
   write_function_section buf [ 0 ];
