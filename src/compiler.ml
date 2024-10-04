@@ -12,11 +12,17 @@ type blocktype =
   | Valtyp of typ
   | S33 of int64
 
+type mut =
+  | Const
+  | Var
+
 exception Compiling_error of string
 
 let error loc message =
   let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
   raise (Compiling_error message)
+
+let globals : Buffer.t list ref = ref []
 
 (* add byte from int (ascii code) *)
 let write_byte buf i =
@@ -74,9 +80,17 @@ let write_numtype buf = function
 
 let write_valtype = write_numtype
 
+let write_mut buf = function
+  | Const -> Buffer.add_char buf '\x00'
+  | Var -> Buffer.add_char buf '\x01'
+
 let write_blocktype buf = function
   | Empty | S33 _ -> ()
   | Valtyp typ -> write_valtype buf typ
+
+let write_globaltype buf typ mut =
+  write_valtype buf typ;
+  write_mut buf mut
 
 let rec compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
@@ -130,6 +144,14 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf e_else_buf;
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
+  | Estmt (_loc, Slet ((typ, _name), expr)) ->
+    let global_buf = Buffer.create 16 in
+    let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Buffer.add_char expr_buf '\x0b';
+    write_globaltype global_buf typ Const;
+    Buffer.add_buffer global_buf expr_buf;
+    globals := global_buf :: !globals;
+    Ok (buf, stack_nb_elts, env)
   | _ -> error loc "expression to be implemented!"
 
 and compile_block block stack_nb_elts env =
@@ -245,6 +267,13 @@ let write_function_section buf typeidxs =
   write_vector function_buf typeidxs;
   write_section buf '\x03' function_buf
 
+let write_global_section buf =
+  if List.length !globals = 0 then ()
+  else
+    let global_buf = Buffer.create 32 in
+    write_vector global_buf !globals;
+    write_section buf '\x06' global_buf
+
 let write_code_section buf codes =
   let code_buf = Buffer.create 16 in
   write_vector code_buf codes;
@@ -262,6 +291,7 @@ let write_start_function buf prog env =
   write_type_section buf [ functype_buf ];
   (* hard-coded: start function idx = 0 *)
   write_function_section buf [ 0 ];
+  write_global_section buf;
   write_start_section buf;
   write_code_section buf [ code_buf ];
   Ok (buf, env)
