@@ -22,7 +22,20 @@ let error loc message =
   let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
   raise (Compiling_error message)
 
-let globals : Buffer.t list ref = ref []
+let globals : (string * (int * Buffer.t)) list ref = ref []
+
+let globals_idx = ref 0
+
+let add_global name buf =
+  globals := !globals @ [ (name, (!globals_idx, buf)) ];
+  incr globals_idx
+
+let get_global_idx loc name =
+  match List.assoc_opt name !globals with
+  | Some (idx, _buf) -> idx
+  | None -> error loc "global not exists!"
+
+let get_global_bufs () = List.map (fun (_name, (_idx, buf)) -> buf) !globals
 
 (* add byte from int (ascii code) *)
 let write_byte buf i =
@@ -104,6 +117,11 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_char buf '\x41';
     write_s32 buf i32;
     Ok (buf, stack_nb_elts + 1, env)
+  | Eident (_typ, name) ->
+    let idx = get_global_idx loc name in
+    Buffer.add_char buf '\x23';
+    write_u32_of_int buf idx;
+    Ok (buf, stack_nb_elts + 1, env)
   | Eunop (Unot, expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
@@ -144,13 +162,13 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf e_else_buf;
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
-  | Estmt (_loc, Slet ((typ, _name), expr)) ->
+  | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_char expr_buf '\x0b';
     write_globaltype global_buf typ Const;
     Buffer.add_buffer global_buf expr_buf;
-    globals := global_buf :: !globals;
+    add_global name global_buf;
     Ok (buf, stack_nb_elts, env)
   | _ -> error loc "expression to be implemented!"
 
@@ -271,7 +289,8 @@ let write_global_section buf =
   if List.length !globals = 0 then ()
   else
     let global_buf = Buffer.create 32 in
-    write_vector global_buf !globals;
+    let globals = get_global_bufs () in
+    write_vector global_buf globals;
     write_section buf '\x06' global_buf
 
 let write_code_section buf codes =
