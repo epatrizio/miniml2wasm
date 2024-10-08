@@ -15,7 +15,7 @@ let typecheck_cst = function
   | Ci32 _i32 -> Ti32
 
 let rec typecheck_unop_expr (loc, _typ, expr') env :
-  (expr * typ Env.t, _) result =
+  (expr * (typ, _) Env.t, _) result =
   match expr' with
   | Eunop (Unot, expr) -> (
     let* (l, t, expr'), env = typecheck_expr expr env in
@@ -29,7 +29,8 @@ let rec typecheck_unop_expr (loc, _typ, expr') env :
     | _ -> error loc "attempt to perform unop '-' on a non i32 type" )
   | _ -> assert false (* call error *)
 
-and typecheck_binop_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
+and typecheck_binop_expr (loc, _typ, expr') env :
+  (expr * (typ, _) Env.t, _) result =
   let typecheck_binop_arith_expr binop e1 e2 env =
     let* (l1, typ1, e1'), env = typecheck_expr e1 env in
     let* (l2, typ2, e2'), env = typecheck_expr e2 env in
@@ -56,7 +57,7 @@ and typecheck_binop_expr (loc, _typ, expr') env : (expr * typ Env.t, _) result =
     error loc message
   | _ -> assert false (* call error *)
 
-and typecheck_expr (loc, typ, expr') env : (expr * typ Env.t, _) result =
+and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
   match expr' with
   | Ecst c as cst ->
     let typ = typecheck_cst c in
@@ -115,7 +116,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * typ Env.t, _) result =
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
 
-and typecheck_block block env : (typ * block * typ Env.t, _) result =
+and typecheck_block block env : (typ * block * (typ, _) Env.t, _) result =
   match block with
   | Bexpr expr ->
     let* (loc, typ, expr'), env = typecheck_expr expr env in
@@ -128,7 +129,7 @@ and typecheck_block block env : (typ * block * typ Env.t, _) result =
       Ok (t, Bseq ((loc, Tunit, expr'), b), env)
     | _ -> error loc "unit type expected in the left-hand side of a sequence" )
 
-and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
+and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
   match stmt' with
   | Slet ((ident_typ, ident_name), expr) ->
     let* (loc_e, typ_e, e'), env = typecheck_expr expr env in
@@ -156,6 +157,6 @@ and typecheck_stmt (loc, stmt') env : (stmt * typ Env.t, _) result =
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, Sprint expr), env)
 
-let typecheck_prog prog env : (prog * typ Env.t, _) result =
+let typecheck_prog prog env : (prog * (typ, _) Env.t, _) result =
   let* _typ, prog, env = typecheck_block prog env in
   Ok (prog, env)

@@ -2,11 +2,12 @@
 
 module SMap = Map.Make (String)
 
-type 'a t =
+type ('a, 'b) t =
   { (* values : 'a ref SMap.t *)
     types : 'a SMap.t
   ; globals : string SMap.t
   ; locals : string SMap.t
+  ; globals_wasm : (string * (int * 'b)) list
   }
 
 let fresh =
@@ -43,8 +44,26 @@ let get_type n env =
   | Some typ -> Ok typ
   | None -> Error (Format.sprintf "ident: %s not found in env.types" n)
 
+let global_wasm_idx = ref 0
+
+let add_global_wasm n data env =
+  let globals_wasm = env.globals_wasm @ [ (n, (!global_wasm_idx, data)) ] in
+  incr global_wasm_idx;
+  { env with globals_wasm }
+
+let get_global_wasm_idx n env =
+  match List.assoc_opt n env.globals_wasm with
+  | Some (idx, _) -> Some idx
+  | None -> None
+
+let get_globals_wasm_datas env =
+  List.map (fun (_name, (_idx, data)) -> data) env.globals_wasm
+
+let is_empty_globals_wasm env = List.length env.globals_wasm = 0
+
 let empty () =
   let types = SMap.empty in
   let globals = SMap.empty in
   let locals = SMap.empty in
-  { types; globals; locals }
+  let globals_wasm = [] in
+  { types; globals; locals; globals_wasm }
