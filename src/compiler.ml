@@ -79,7 +79,7 @@ let write_section buf id content =
 
 let write_numtype buf = function
   | Tbool | Ti32 -> Buffer.add_char buf '\x7f'
-  | Tunit | Tunknown -> ()
+  | Tunit | Tref _ | Tunknown -> ()
 
 let write_valtype = write_numtype
 
@@ -175,6 +175,8 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     write_u32_of_int buf idx;
     Buffer.add_buffer buf e2_buf;
     Ok (buf, stack_nb_elts - 1, env)
+  | Eref _expr -> assert false
+  | Ederef (_typ, _name) -> assert false
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
@@ -183,6 +185,7 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer global_buf expr_buf;
     let env = Env.add_global_wasm name global_buf env in
     Ok (buf, stack_nb_elts, env)
+  | Estmt (_loc, Srefassign ((_typ, _name), _expr)) -> assert false
   | _ -> error loc "expression to be implemented!"
 
 and compile_block block stack_nb_elts env =

@@ -1,5 +1,5 @@
-%token PLUS MINUS MUL DIV LPAREN RPAREN SEMICOLON COLON EQ LT LE GT GE EQEQ NEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE EOF PRINT
+%token PLUS MINUS MUL DIV LPAREN RPAREN SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF PRINT
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -39,6 +39,7 @@ let prog :=
 
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
+  | ~ = ident; REFEQ; ~ = expr; <Srefassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | PRINT; ~ = expr; <Sprint>
 
@@ -57,6 +58,8 @@ let expr_bis :=
   | BEGIN; ~ = block; END; <Eblock>
   | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
+  | ~ = preceded(REF, expr); <Eref>
+  | EXCL; ~ = ident; <Ederef>
   | ~ = stmt; <Estmt>
 
 let expr :=
@@ -89,5 +92,6 @@ let typ :=
   | TUNIT; { Tunit }
   | TBOOL; { Tbool }
   | TI32; { Ti32 }
+  | typ = terminated(typ, REF); { Tref typ }
 
 %%

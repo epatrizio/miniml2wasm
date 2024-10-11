@@ -7,6 +7,7 @@
   scope_4.mml
   scope_5.mml
   scope_6.mml
+  scope_7.mml
   typer_1.mml
   typer_2.mml
   typer_3.mml
@@ -18,4 +19,8 @@
   typer_9.mml
   typer_10.mml
   typer_11.mml
+  typer_12.mml
+  typer_13.mml
+  typer_14.mml
+  typer_15.mml
   (glob_files _wasm/*)))

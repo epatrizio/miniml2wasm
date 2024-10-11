@@ -41,10 +41,12 @@ let rec token buf =
   | '>' -> GT
   | ">=" -> GE
   | '=' -> EQ
+  | ":=" -> REFEQ
   | '(' -> LPAREN
   | ')' -> RPAREN
   | ';' -> SEMICOLON
   | ':' -> COLON
+  | '!' -> EXCL
   | "let" -> LET
   | "in" -> IN
   | "begin" -> BEGIN
@@ -55,6 +57,7 @@ let rec token buf =
   | "while" -> WHILE
   | "do" -> DO
   | "done" -> DONE
+  | "ref" -> REF
   | "&&" -> AND
   | "||" -> OR
   | "not" -> NOT

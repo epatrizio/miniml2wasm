@@ -62,9 +62,9 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
   | Ecst c as cst ->
     let typ = typecheck_cst c in
     Ok ((loc, typ, cst), env)
-  | Eident (_typ, name) as ident ->
+  | Eident (_typ, name) ->
     let* typ = Env.get_type name env in
-    Ok ((loc, typ, ident), env)
+    Ok ((loc, typ, Eident (typ, name)), env)
   | Eunop (_unop, _expr) as unop_expr ->
     typecheck_unop_expr (loc, typ, unop_expr) env
   | Ebinop (_e1, _binop, _e2) as binop_expr ->
@@ -112,6 +112,16 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
           , env )
       | _ -> error loc "attempt to perform an assignment with different types"
     end
+  | Eref expr ->
+    let* (l, t, e'), env = typecheck_expr expr env in
+    Ok ((loc, Tref t, Eref (l, t, e')), env)
+  | Ederef (_typ, name) ->
+    let* typ = Env.get_type name env in
+    begin
+      match typ with
+      | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, name)), env)
+      | _ -> error loc "attempt to dereference a non reference type"
+    end
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -139,6 +149,14 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         let env = Env.set_type ident_name typ_e env in
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
+    end
+  | Srefassign ((ident_typ, _), expr) as stmt ->
+    let* (_, typ_e, _), env = typecheck_expr expr env in
+    begin
+      match (ident_typ, typ_e) with
+      | Tref typ, typ_e when typ = typ_e -> Ok ((loc, stmt), env)
+      | _ ->
+        error loc "attempt to perform a ref assignment with different types"
     end
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in

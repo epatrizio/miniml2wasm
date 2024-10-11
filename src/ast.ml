@@ -6,6 +6,7 @@ type typ =
   | Tunit
   | Tbool
   | Ti32
+  | Tref of typ
   | Tunknown
 
 type ident = typ * string
@@ -43,6 +44,8 @@ and expr' =
   | Eblock of block
   | Eif of expr * expr * expr
   | Elet of ident * expr * expr
+  | Eref of expr
+  | Ederef of ident
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -53,6 +56,7 @@ and stmt = location * stmt'
 
 and stmt' =
   | Slet of ident * expr
+  | Srefassign of ident * expr
   | Swhile of expr * block
   | Sprint of expr
 
@@ -62,14 +66,19 @@ type prog = block
 
 open Format
 
+let str_typ = function
+  | Tunit -> "unit"
+  | Tbool -> "bool"
+  | Ti32 -> "i32"
+  | _ -> assert false
+
 let print_typ fmt typ =
   pp_print_string fmt
   @@
   match typ with
-  | Tunit -> "unit"
-  | Tbool -> "bool"
-  | Ti32 -> "i32"
+  | Tref typ -> Format.sprintf {|%s ref|} (str_typ typ)
   | Tunknown -> "unknown_type"
+  | typ -> str_typ typ
 
 let print_ident fmt ?(typ_display = false) ((typ, name) as _ident : ident) =
   if typ_display then fprintf fmt {|%s : %a|} name print_typ typ
@@ -114,6 +123,8 @@ let rec print_expr fmt (_, _, expr) =
     fprintf fmt {|let %a = %a in@.@[<v 2>%a@]|}
       (print_ident ~typ_display:true)
       ident print_expr e1 print_expr e2
+  | Eref e -> fprintf fmt {|ref %a|} print_expr e
+  | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =
@@ -121,6 +132,10 @@ and print_stmt fmt (_, stmt) =
   | Slet (ident, expr) ->
     fprintf fmt {|let %a = %a|}
       (print_ident ~typ_display:true)
+      ident print_expr expr
+  | Srefassign (ident, expr) ->
+    fprintf fmt {|%a := %a|}
+      (print_ident ~typ_display:false)
       ident print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block

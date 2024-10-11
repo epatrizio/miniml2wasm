@@ -31,6 +31,12 @@ let rec analyse_expr (loc, typ, expr') env =
     let fresh_name, env_local = Env.add_local name env_local in
     let* e2, _env_local = analyse_expr e2 env_local in
     Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
+  | Eref expr ->
+    let* expr, env = analyse_expr expr env in
+    Ok ((loc, typ, Eref expr), env)
+  | Ederef (typ_ident, name) ->
+    let* name = Env.get_name name env in
+    Ok ((loc, typ, Ederef (typ_ident, name)), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)
@@ -51,6 +57,10 @@ and analyse_stmt (loc, stmt') env =
     let* expr, env = analyse_expr expr env in
     let fresh_name, env = Env.add_global name env in
     Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+  | Srefassign ((typ_ident, name), expr) ->
+    let* expr, env = analyse_expr expr env in
+    let* name = Env.get_name name env in
+    Ok ((loc, Srefassign ((typ_ident, name), expr)), env)
   | Swhile (expr, block) ->
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in
