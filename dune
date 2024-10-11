@@ -1,4 +1,4 @@
 (mdx
  (libraries miniml2wasm)
- (deps %{bin:miniml2wasm})
+ (deps %{bin:miniml2wasm} %{bin:dune})
  (files README.md))

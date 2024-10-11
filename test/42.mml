@@ -1,4 +1,4 @@
 (* type is optional, it can be inferred *)
 let x = 40;           (* global scope *)
 let y : i32 = 2 in    (* local scope *)
-  print x + y
+  (x + y)
