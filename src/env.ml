@@ -8,6 +8,7 @@ type ('a, 'b) t =
   ; globals : string SMap.t
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
+  ; locals_wasm : (string * (int * 'a)) list
   }
 
 let fresh =
@@ -61,9 +62,25 @@ let get_globals_wasm_datas env =
 
 let is_empty_globals_wasm env = List.length env.globals_wasm = 0
 
+let local_wasm_idx = ref 0
+
+let add_local_wasm n typ env =
+  let locals_wasm = env.locals_wasm @ [ (n, (!local_wasm_idx, typ)) ] in
+  incr local_wasm_idx;
+  { env with locals_wasm }
+
+let get_local_wasm_idx n env =
+  match List.assoc_opt n env.locals_wasm with
+  | Some (idx, _) -> Some idx
+  | None -> None
+
+let get_locals_wasm_typs env =
+  List.map (fun (_name, (_idx, typ)) -> typ) env.locals_wasm
+
 let empty () =
   let types = SMap.empty in
   let globals = SMap.empty in
   let locals = SMap.empty in
   let globals_wasm = [] in
-  { types; globals; locals; globals_wasm }
+  let locals_wasm = [] in
+  { types; globals; locals; globals_wasm; locals_wasm }

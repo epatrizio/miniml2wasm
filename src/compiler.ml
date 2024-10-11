@@ -22,10 +22,10 @@ let error loc message =
   let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
   raise (Compiling_error message)
 
-let get_global_idx loc name env =
-  match Env.get_global_wasm_idx name env with
+let get_local_idx loc name env =
+  match Env.get_local_wasm_idx name env with
   | Some idx -> idx
-  | None -> error loc "global not exists!"
+  | None -> error loc "local not exists!"
 
 (* add byte from int (ascii code) *)
 let write_byte buf i =
@@ -108,8 +108,20 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     write_s32 buf i32;
     Ok (buf, stack_nb_elts + 1, env)
   | Eident (_typ, name) ->
-    let idx = get_global_idx loc name env in
-    Buffer.add_char buf '\x23';
+    let idx =
+      match Env.get_local_wasm_idx name env with
+      | Some idx ->
+        (* local.get *)
+        Buffer.add_char buf '\x20';
+        idx
+      | None -> (
+        match Env.get_global_wasm_idx name env with
+        | Some idx ->
+          (* global.get *)
+          Buffer.add_char buf '\x23';
+          idx
+        | None -> error loc "var not exists!" )
+    in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts + 1, env)
   | Eunop (Unot, expr) ->
@@ -151,6 +163,17 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_char buf '\x05';
     Buffer.add_buffer buf e_else_buf;
     Buffer.add_char buf '\x0b';
+    Ok (buf, stack_nb_elts - 1, env)
+  | Elet ((typ, name), e1, e2) ->
+    let env = Env.add_local_wasm name typ env in
+    let idx = get_local_idx loc name env in
+    let* e1_buf, stack_nb_elts, env = compile_expr e1 stack_nb_elts env in
+    let* e2_buf, stack_nb_elts, env = compile_expr e2 stack_nb_elts env in
+    Buffer.add_buffer buf e1_buf;
+    Buffer.add_char buf '\x21';
+    (* local.set *)
+    write_u32_of_int buf idx;
+    Buffer.add_buffer buf e2_buf;
     Ok (buf, stack_nb_elts - 1, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
@@ -227,6 +250,16 @@ let encode_prog prog env =
       Buffer.add_char buf '\x1a';
       drop buf (n - 1) )
   in
+  let get_locals env =
+    let locals = Env.get_locals_wasm_typs env in
+    List.map
+      (fun typ ->
+        let buf = Buffer.create 16 in
+        write_u32_of_int buf 1;
+        write_valtype buf typ;
+        buf )
+      locals
+  in
   let rec compile_prog buf prog stack_nb_elts env =
     begin
       match prog with
@@ -245,15 +278,17 @@ let encode_prog prog env =
     end
   in
   let buf = Buffer.create 256 in
+  let locals_buf = Buffer.create 256 in
   let code_buf = Buffer.create 256 in
   let* code_buf, stack_nb_elts, env = compile_prog code_buf prog 0 env in
   drop code_buf stack_nb_elts;
   Buffer.add_char code_buf '\x0b';
+  let locals_buf_list = get_locals env in
+  write_vector locals_buf locals_buf_list;
   let code_len = Buffer.length code_buf in
-  (* code_len + 1: empty locals *)
-  let code_len = code_len + 1 in
+  let code_len = code_len + Buffer.length locals_buf in
   write_u32_of_int buf code_len;
-  write_vector buf [];
+  Buffer.add_buffer buf locals_buf;
   Buffer.add_buffer buf code_buf;
   Ok (buf, env)
 
