@@ -1,6 +1,7 @@
 (cram
  (deps
   compiler_1.mml
+  compiler_2.mml
   scope_1.mml
   scope_2.mml
   scope_3.mml

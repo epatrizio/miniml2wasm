@@ -1,0 +1,9 @@
+let g1 = ref 0;
+let g2 : i32 = 2;
+let l1 : i32 ref = ref 0 in
+let l2 = 10 in
+  begin
+    g1 := 10;
+    l1 := 20;
+    !g1 + !l1 + g2 + l2
+  end

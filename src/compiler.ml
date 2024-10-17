@@ -12,9 +12,9 @@ type blocktype =
   | Valtyp of typ
   | S33 of int64
 
-type mut =
-  | Const
-  | Var
+type var_access =
+  | Get
+  | Set
 
 exception Compiling_error of string
 
@@ -26,6 +26,33 @@ let get_local_idx loc name env =
   match Env.get_local_wasm_idx name env with
   | Some idx -> idx
   | None -> error loc "local not exists!"
+
+let get_var_idx buf var_access loc name env =
+  let local_action buf = function
+    | Get -> Buffer.add_char buf '\x20'
+    | Set -> Buffer.add_char buf '\x21'
+  in
+  let global_action buf = function
+    | Get -> Buffer.add_char buf '\x23'
+    | Set -> Buffer.add_char buf '\x24'
+  in
+  match Env.get_local_wasm_idx name env with
+  | Some idx ->
+    local_action buf var_access;
+    idx
+  | None -> (
+    match Env.get_global_wasm_idx name env with
+    | Some idx ->
+      global_action buf var_access;
+      idx
+    | None -> error loc "var not exists!" )
+
+let get_blocktype = function
+  | Tunit -> Empty
+  | Tbool -> Valtyp Tbool
+  | Ti32 -> Valtyp Ti32
+  | Tref _ -> assert false
+  | Tunknown -> assert false
 
 (* add byte from int (ascii code) *)
 let write_byte buf i =
@@ -78,22 +105,24 @@ let write_section buf id content =
   end
 
 let write_numtype buf = function
-  | Tbool | Ti32 -> Buffer.add_char buf '\x7f'
+  | Tbool | Ti32 | Tref Ti32 | Tref Tbool -> Buffer.add_char buf '\x7f'
   | Tunit | Tref _ | Tunknown -> ()
 
 let write_valtype = write_numtype
 
 let write_mut buf = function
-  | Const -> Buffer.add_char buf '\x00'
-  | Var -> Buffer.add_char buf '\x01'
+  | Tunit | Tbool | Ti32 -> Buffer.add_char buf '\x00'
+  | Tref _ -> Buffer.add_char buf '\x01'
+  | Tunknown -> assert false
 
 let write_blocktype buf = function
-  | Empty | S33 _ -> ()
+  | Empty -> Buffer.add_char buf '\x40'
   | Valtyp typ -> write_valtype buf typ
+  | S33 _ -> assert false
 
-let write_globaltype buf typ mut =
+let write_globaltype buf typ =
   write_valtype buf typ;
-  write_mut buf mut
+  write_mut buf typ
 
 let rec compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
@@ -108,20 +137,7 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     write_s32 buf i32;
     Ok (buf, stack_nb_elts + 1, env)
   | Eident (_typ, name) ->
-    let idx =
-      match Env.get_local_wasm_idx name env with
-      | Some idx ->
-        (* local.get *)
-        Buffer.add_char buf '\x20';
-        idx
-      | None -> (
-        match Env.get_global_wasm_idx name env with
-        | Some idx ->
-          (* global.get *)
-          Buffer.add_char buf '\x23';
-          idx
-        | None -> error loc "var not exists!" )
-    in
+    let idx = get_var_idx buf Get loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts + 1, env)
   | Eunop (Unot, expr) ->
@@ -139,8 +155,9 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     let* block_buf, typ, stack_nb_elts, env =
       compile_block block stack_nb_elts env
     in
+    let blocktype = get_blocktype typ in
     Buffer.add_char buf '\x02';
-    write_blocktype buf (Valtyp typ);
+    write_blocktype buf blocktype;
     Buffer.add_buffer buf block_buf;
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts, env)
@@ -155,10 +172,11 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     let* e_else_buf, _stack_nb_elts, env =
       compile_expr e_else stack_nb_elts env
     in
+    let blocktype = get_blocktype typ in
     (* _stack_nb_elts: same stack state on both branches *)
     Buffer.add_buffer buf e_cond_buf;
     Buffer.add_char buf '\x04';
-    write_blocktype buf (Valtyp typ);
+    write_blocktype buf blocktype;
     Buffer.add_buffer buf e_then_buf;
     Buffer.add_char buf '\x05';
     Buffer.add_buffer buf e_else_buf;
@@ -175,17 +193,25 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     write_u32_of_int buf idx;
     Buffer.add_buffer buf e2_buf;
     Ok (buf, stack_nb_elts - 1, env)
-  | Eref _expr -> assert false
-  | Ederef (_typ, _name) -> assert false
+  | Eref expr ->
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Ok (expr_buf, stack_nb_elts, env)
+  | Ederef (typ, name) ->
+    compile_expr (loc, typ, Eident (typ, name)) stack_nb_elts env
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_char expr_buf '\x0b';
-    write_globaltype global_buf typ Const;
+    write_globaltype global_buf typ;
     Buffer.add_buffer global_buf expr_buf;
     let env = Env.add_global_wasm name global_buf env in
     Ok (buf, stack_nb_elts, env)
-  | Estmt (_loc, Srefassign ((_typ, _name), _expr)) -> assert false
+  | Estmt (loc, Srefassign ((_typ, name), expr)) ->
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Buffer.add_buffer buf expr_buf;
+    let idx = get_var_idx buf Set loc name env in
+    write_u32_of_int buf idx;
+    Ok (buf, stack_nb_elts - 1, env)
   | _ -> error loc "expression to be implemented!"
 
 and compile_block block stack_nb_elts env =
