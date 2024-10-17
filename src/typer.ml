@@ -150,7 +150,8 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
     end
-  | Srefassign ((ident_typ, _), expr) as stmt ->
+  | Srefassign ((_, ident_name), expr) as stmt ->
+    let* ident_typ = Env.get_type ident_name env in
     let* (_, typ_e, _), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
