@@ -45,16 +45,47 @@ and typecheck_binop_expr (loc, _typ, expr') env :
       in
       error loc message
   in
+  let typecheck_binop_bool_expr binop e1 e2 env =
+    let* (l1, typ1, e1'), env = typecheck_expr e1 env in
+    let* (l2, typ2, e2'), env = typecheck_expr e2 env in
+    match (typ1, typ2) with
+    | Tbool, Tbool ->
+      Ok ((loc, Tbool, Ebinop ((l1, typ1, e1'), binop, (l2, typ2, e2'))), env)
+    | _ ->
+      let message =
+        Format.sprintf
+          {|attempt to perform a boolean binop '%s' on a non boolean types|}
+          (str_binop binop)
+      in
+      error loc message
+  in
+  let typecheck_binop_comp_expr binop e1 e2 env =
+    let* (l1, typ1, e1'), env = typecheck_expr e1 env in
+    let* (l2, typ2, e2'), env = typecheck_expr e2 env in
+    match (typ1, typ2) with
+    | Ti32, Ti32 ->
+      Ok ((loc, Tbool, Ebinop ((l1, typ1, e1'), binop, (l2, typ2, e2'))), env)
+    | _ ->
+      let message =
+        Format.sprintf
+          {|attempt to perform a comparaison binop '%s' on a non i32 types|}
+          (str_binop binop)
+      in
+      error loc message
+  in
   match expr' with
+  | Ebinop (e1, Band, e2) -> typecheck_binop_bool_expr Band e1 e2 env
+  | Ebinop (e1, Bor, e2) -> typecheck_binop_bool_expr Bor e1 e2 env
   | Ebinop (e1, Badd, e2) -> typecheck_binop_arith_expr Badd e1 e2 env
   | Ebinop (e1, Bsub, e2) -> typecheck_binop_arith_expr Bsub e1 e2 env
   | Ebinop (e1, Bmul, e2) -> typecheck_binop_arith_expr Bmul e1 e2 env
   | Ebinop (e1, Bdiv, e2) -> typecheck_binop_arith_expr Bdiv e1 e2 env
-  | Ebinop (_e1, binop, _e2) ->
-    let message =
-      Format.sprintf {|binop '%s': to be implemented!|} (str_binop binop)
-    in
-    error loc message
+  | Ebinop (e1, Beq, e2) -> typecheck_binop_comp_expr Beq e1 e2 env
+  | Ebinop (e1, Bneq, e2) -> typecheck_binop_comp_expr Bneq e1 e2 env
+  | Ebinop (e1, Blt, e2) -> typecheck_binop_comp_expr Blt e1 e2 env
+  | Ebinop (e1, Ble, e2) -> typecheck_binop_comp_expr Ble e1 e2 env
+  | Ebinop (e1, Bgt, e2) -> typecheck_binop_comp_expr Bgt e1 e2 env
+  | Ebinop (e1, Bge, e2) -> typecheck_binop_comp_expr Bge e1 e2 env
   | _ -> assert false (* call error *)
 
 and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =

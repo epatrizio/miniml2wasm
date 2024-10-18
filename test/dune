@@ -24,4 +24,6 @@
   typer_13.mml
   typer_14.mml
   typer_15.mml
+  typer_16.mml
+  typer_17.mml
   (glob_files _wasm/*)))
