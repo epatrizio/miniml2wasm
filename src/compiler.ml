@@ -104,6 +104,20 @@ let write_section buf id content =
     Buffer.add_buffer buf content
   end
 
+let write_unreachable buf = Buffer.add_char buf '\x00'
+
+let write_nop buf = Buffer.add_char buf '\x01'
+
+let write_br buf idx =
+  Buffer.add_char buf '\x0c';
+  write_u32_of_int buf idx
+
+let write_br_if buf idx =
+  Buffer.add_char buf '\x0d';
+  write_u32_of_int buf idx
+
+let write_return buf = Buffer.add_char buf '\x0f'
+
 let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool -> Buffer.add_char buf '\x7f'
   | Tunit | Tref _ | Tunknown -> ()
@@ -211,6 +225,29 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf expr_buf;
     let idx = get_var_idx buf Set loc name env in
     write_u32_of_int buf idx;
+    Ok (buf, stack_nb_elts - 1, env)
+  | Estmt (_loc, Swhile (cond_expr, block)) ->
+    let* cond_expr_buf, stack_nb_elts, env =
+      compile_expr cond_expr stack_nb_elts env
+    in
+    let* block_buf, typ, stack_nb_elts, env =
+      compile_block block stack_nb_elts env
+    in
+    let blocktype = get_blocktype typ in
+    Buffer.add_char buf '\x03';
+    write_blocktype buf blocktype;
+    Buffer.add_buffer buf cond_expr_buf;
+    (* while condition is checked by a if expr *)
+    Buffer.add_char buf '\x04';
+    write_blocktype buf Empty;
+    Buffer.add_buffer buf block_buf;
+    write_br buf 1;
+    Buffer.add_char buf '\x05';
+    write_nop buf;
+    (* if end *)
+    Buffer.add_char buf '\x0b';
+    (* loop end *)
+    Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
   | _ -> error loc "expression to be implemented!"
 

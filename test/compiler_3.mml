@@ -1,0 +1,7 @@
+let x : i32 ref = ref 0 in
+  begin
+    while !x < 2 do
+      x := !x + 1
+    done;
+    !x
+  end
