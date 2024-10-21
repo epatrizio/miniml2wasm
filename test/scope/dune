@@ -1,0 +1,10 @@
+(cram
+ (deps
+  scope_1.mml
+  scope_2.mml
+  scope_3.mml
+  scope_4.mml
+  scope_5.mml
+  scope_6.mml
+  scope_7.mml
+  (glob_files _wasm/*)))

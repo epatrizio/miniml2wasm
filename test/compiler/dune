@@ -1,0 +1,6 @@
+(cram
+ (deps
+  compiler_1.mml
+  compiler_2.mml
+  compiler_3.mml
+  (glob_files _wasm/*)))
