@@ -51,6 +51,7 @@ let get_blocktype = function
   | Tunit -> Empty
   | Tbool -> Valtyp Tbool
   | Ti32 -> Valtyp Ti32
+  | Tarray _ -> assert false
   | Tref _ -> assert false
   | Tunknown -> assert false
 
@@ -121,12 +122,14 @@ let write_return buf = Buffer.add_char buf '\x0f'
 let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool -> Buffer.add_char buf '\x7f'
   | Tunit | Tref _ | Tunknown -> ()
+  | Tarray _ -> assert false
 
 let write_valtype = write_numtype
 
 let write_mut buf = function
   | Tunit | Tbool | Ti32 -> Buffer.add_char buf '\x00'
   | Tref _ -> Buffer.add_char buf '\x01'
+  | Tarray _ -> assert false
   | Tunknown -> assert false
 
 let write_blocktype buf = function
@@ -212,6 +215,8 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Eident (typ, name)) stack_nb_elts env
+  | Earray_init _el -> assert false
+  | Earray (_ident, _expr) -> assert false
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
@@ -226,6 +231,7 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     let idx = get_var_idx buf Set loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts - 1, env)
+  | Estmt (_loc, Sarrayassign ((_typ, _name), _e1, _e2)) -> assert false
   | Estmt (_loc, Swhile (cond_expr, block)) ->
     let* cond_expr_buf, stack_nb_elts, env =
       compile_expr cond_expr stack_nb_elts env
@@ -249,6 +255,7 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     (* loop end *)
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
+  | Estmt (_loc, Sarray_size (_typ, _name)) -> assert false
   | _ -> error loc "expression to be implemented!"
 
 and compile_block block stack_nb_elts env =
