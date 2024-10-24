@@ -7,6 +7,7 @@ type typ =
   | Tbool
   | Ti32
   | Tref of typ
+  | Tarray of typ * Int32.t
   | Tunknown
 
 type ident = typ * string
@@ -46,6 +47,8 @@ and expr' =
   | Elet of ident * expr * expr
   | Eref of expr
   | Ederef of ident
+  | Earray_init of expr list
+  | Earray of ident * expr
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -57,7 +60,9 @@ and stmt = location * stmt'
 and stmt' =
   | Slet of ident * expr
   | Srefassign of ident * expr
+  | Sarrayassign of ident * expr * expr
   | Swhile of expr * block
+  | Sarray_size of ident
   | Sprint of expr
 
 type prog = block
@@ -66,10 +71,14 @@ type prog = block
 
 open Format
 
+let pp_sep fmt () = fprintf fmt ", "
+
 let str_typ = function
   | Tunit -> "unit"
   | Tbool -> "bool"
   | Ti32 -> "i32"
+  | Tarray (Ti32, i) -> Format.sprintf {|i32[%d]|} (Int32.to_int i)
+  | Tarray (Tbool, i) -> Format.sprintf {|bool[%d]|} (Int32.to_int i)
   | _ -> assert false
 
 let print_typ fmt typ =
@@ -125,6 +134,11 @@ let rec print_expr fmt (_, _, expr) =
       ident print_expr e1 print_expr e2
   | Eref e -> fprintf fmt {|ref %a|} print_expr e
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
+  | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
+  | Earray (ident, expr) ->
+    fprintf fmt {|%a[%a]|}
+      (print_ident ~typ_display:false)
+      ident print_expr expr
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =
@@ -137,8 +151,14 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|%a := %a|}
       (print_ident ~typ_display:false)
       ident print_expr expr
+  | Sarrayassign (ident, e1, e2) ->
+    fprintf fmt {|%a[%a] := %a|}
+      (print_ident ~typ_display:false)
+      ident print_expr e1 print_expr e2
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
+  | Sarray_size ident ->
+    fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
   | Sprint expr -> fprintf fmt {|print %a|} print_expr expr
 
 and print_block fmt = function

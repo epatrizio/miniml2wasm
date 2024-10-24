@@ -153,6 +153,8 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, name)), env)
       | _ -> error loc "attempt to dereference a non reference type"
     end
+  | Earray_init _el -> assert false
+  | Earray (_ident, _expr) -> assert false
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -190,6 +192,7 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
+  | Sarrayassign ((_typ, _name), _e1, _e2) -> assert false
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
@@ -203,6 +206,7 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         end
       | _ -> error loc "type bool is expected in the condition of a while-loop"
     end
+  | Sarray_size (_typ, _name) -> assert false
   | Sprint expr ->
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, Sprint expr), env)
