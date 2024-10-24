@@ -1,0 +1,4 @@
+(cram
+ (deps
+  fact.mml
+  (glob_files _wasm/*)))

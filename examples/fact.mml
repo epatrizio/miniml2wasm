@@ -1,0 +1,11 @@
+(* factorial 6 computation *)
+let fact : i32 ref = ref 0;
+let n : i32 ref = ref 6 in
+  begin
+    fact := !n;
+    while !n > 2 do
+      n := !n - 1;
+      fact := !fact * !n
+    done
+  end;
+!fact   (* 720 *)
