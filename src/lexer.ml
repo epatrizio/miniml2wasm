@@ -44,6 +44,9 @@ let rec token buf =
   | ":=" -> REFEQ
   | '(' -> LPAREN
   | ')' -> RPAREN
+  | '[' -> LBRACKET
+  | ']' -> RBRACKET
+  | ',' -> COMMA
   | ';' -> SEMICOLON
   | ':' -> COLON
   | '!' -> EXCL
@@ -61,6 +64,7 @@ let rec token buf =
   | "&&" -> AND
   | "||" -> OR
   | "not" -> NOT
+  | "array_size" -> ARRAY_SIZE
   | "print" -> PRINT
   | "unit" -> TUNIT
   | "bool" -> TBOOL
