@@ -19,15 +19,11 @@ factorial:
   stack        : [ i32.const 6 ]
   running instr: local.set 0
   stack        : [  ]
-  running instr: i32.const 0
-  stack        : [ i32.const 0 ]
-  running instr: local.set 1
-  stack        : [  ]
   running instr: block   <expr>
   stack        : [  ]
   running instr: local.get 0
   stack        : [ i32.const 6 ]
-  running instr: local.set 1
+  running instr: global.set 0
   stack        : [  ]
   running instr: loop   <expr>
   stack        : [  ]
@@ -43,10 +39,10 @@ factorial:
       i32.const 1
       i32.sub
       local.set 0
-      local.get 1
+      global.get 0
       local.get 0
       i32.mul
-      local.set 1
+      global.set 0
       br 1
     )
     (else
@@ -62,13 +58,13 @@ factorial:
   stack        : [ i32.const 5 ]
   running instr: local.set 0
   stack        : [  ]
-  running instr: local.get 1
+  running instr: global.get 0
   stack        : [ i32.const 6 ]
   running instr: local.get 0
   stack        : [ i32.const 5 ; i32.const 6 ]
   running instr: i32.mul
   stack        : [ i32.const 30 ]
-  running instr: local.set 1
+  running instr: global.set 0
   stack        : [  ]
   running instr: br 1
   stack        : [  ]
@@ -84,10 +80,10 @@ factorial:
       i32.const 1
       i32.sub
       local.set 0
-      local.get 1
+      global.get 0
       local.get 0
       i32.mul
-      local.set 1
+      global.set 0
       br 1
     )
     (else
@@ -103,13 +99,13 @@ factorial:
   stack        : [ i32.const 4 ]
   running instr: local.set 0
   stack        : [  ]
-  running instr: local.get 1
+  running instr: global.get 0
   stack        : [ i32.const 30 ]
   running instr: local.get 0
   stack        : [ i32.const 4 ; i32.const 30 ]
   running instr: i32.mul
   stack        : [ i32.const 120 ]
-  running instr: local.set 1
+  running instr: global.set 0
   stack        : [  ]
   running instr: br 1
   stack        : [  ]
@@ -125,10 +121,10 @@ factorial:
       i32.const 1
       i32.sub
       local.set 0
-      local.get 1
+      global.get 0
       local.get 0
       i32.mul
-      local.set 1
+      global.set 0
       br 1
     )
     (else
@@ -144,13 +140,13 @@ factorial:
   stack        : [ i32.const 3 ]
   running instr: local.set 0
   stack        : [  ]
-  running instr: local.get 1
+  running instr: global.get 0
   stack        : [ i32.const 120 ]
   running instr: local.get 0
   stack        : [ i32.const 3 ; i32.const 120 ]
   running instr: i32.mul
   stack        : [ i32.const 360 ]
-  running instr: local.set 1
+  running instr: global.set 0
   stack        : [  ]
   running instr: br 1
   stack        : [  ]
@@ -166,10 +162,10 @@ factorial:
       i32.const 1
       i32.sub
       local.set 0
-      local.get 1
+      global.get 0
       local.get 0
       i32.mul
-      local.set 1
+      global.set 0
       br 1
     )
     (else
@@ -185,13 +181,13 @@ factorial:
   stack        : [ i32.const 2 ]
   running instr: local.set 0
   stack        : [  ]
-  running instr: local.get 1
+  running instr: global.get 0
   stack        : [ i32.const 360 ]
   running instr: local.get 0
   stack        : [ i32.const 2 ; i32.const 360 ]
   running instr: i32.mul
   stack        : [ i32.const 720 ]
-  running instr: local.set 1
+  running instr: global.set 0
   stack        : [  ]
   running instr: br 1
   stack        : [  ]
@@ -207,10 +203,10 @@ factorial:
       i32.const 1
       i32.sub
       local.set 0
-      local.get 1
+      global.get 0
       local.get 0
       i32.mul
-      local.set 1
+      global.set 0
       br 1
     )
     (else
@@ -222,8 +218,8 @@ factorial:
   stack        : [  ]
   stack        : [  ]
   stack        : [  ]
-  running instr: local.get 1
-  stack        : [ i32.const 720 ]
+  stack        : [  ]
+  running instr: global.get 0
   stack        : [ i32.const 720 ]
   running instr: drop
   stack        : [  ]
