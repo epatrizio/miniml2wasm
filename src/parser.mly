@@ -1,5 +1,5 @@
-%token PLUS MINUS MUL DIV LPAREN RPAREN SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF PRINT
+%token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF PRINT ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -40,8 +40,10 @@ let prog :=
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
+  | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | PRINT; ~ = expr; <Sprint>
+  | ARRAY_SIZE; ~ = ident; <Sarray_size>
 
 let stmt :=
   | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
@@ -60,6 +62,8 @@ let expr_bis :=
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
+  | LBRACKET; ~ = separated_nonempty_list(COMMA, expr); RBRACKET; <Earray_init>
+  | ~ = ident; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ~ = stmt; <Estmt>
 
 let expr :=
@@ -92,6 +96,10 @@ let typ :=
   | TUNIT; { Tunit }
   | TBOOL; { Tbool }
   | TI32; { Ti32 }
-  | typ = terminated(typ, REF); { Tref typ }
+  | ~ = terminated(typ, REF); <Tref>
+  | typ = typ; cst = delimited(LBRACKET, CST, RBRACKET); {
+      match cst with
+      | Ci32 i32 -> Tarray (typ, i32)
+      | _ -> assert false }
 
 %%
