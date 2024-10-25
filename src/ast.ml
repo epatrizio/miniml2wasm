@@ -79,6 +79,7 @@ let str_typ = function
   | Ti32 -> "i32"
   | Tarray (Ti32, i) -> Format.sprintf {|i32[%d]|} (Int32.to_int i)
   | Tarray (Tbool, i) -> Format.sprintf {|bool[%d]|} (Int32.to_int i)
+  | Tarray (Tunit, i) -> Format.sprintf {|unit[%d]|} (Int32.to_int i)
   | _ -> assert false
 
 let print_typ fmt typ =
