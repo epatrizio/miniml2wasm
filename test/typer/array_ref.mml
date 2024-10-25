@@ -1,0 +1,10 @@
+(* ref manipulation *)
+let v1 = 0 in
+let v2 = ref 1 in
+let v3 = ref true in
+let arr : bool[2] = [false,false] in
+  begin
+    arr[v1] := true;  (* OK *)
+    arr[!v2] := !v3;  (* OK *)
+    arr[1] := v1      (* KO! i32 != bool *)
+  end

@@ -275,7 +275,7 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
     begin
       match ident_typ with
       | Tarray _ -> Ok ((loc, stmt), env)
-      | _ -> error loc "attempt to perform a array_size on a non array var"
+      | _ -> error loc "attempt to perform an array_size call on a non array var"
     end
   | Sprint expr ->
     let* expr, env = typecheck_expr expr env in

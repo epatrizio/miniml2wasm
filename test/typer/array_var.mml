@@ -1,0 +1,4 @@
+(* x is not an array *)
+let x = 0 in
+let arr = [0,1,2,3] in
+  x[0]
