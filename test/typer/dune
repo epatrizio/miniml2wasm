@@ -1,20 +1,20 @@
 (cram
  (deps
-  typer_1.mml
-  typer_2.mml
-  typer_3.mml
-  typer_4.mml
-  typer_5.mml
-  typer_6.mml
-  typer_7.mml
-  typer_8.mml
-  typer_9.mml
-  typer_10.mml
-  typer_11.mml
-  typer_12.mml
-  typer_13.mml
-  typer_14.mml
-  typer_15.mml
-  typer_16.mml
-  typer_17.mml
+  binop_bool.mml
+  binop_ge.mml
+  binop_min.mml
+  block_1.mml
+  block_2.mml
+  block_3.mml
+  global_binop.mml
+  local_binop.mml
+  local_if.mml
+  local_unop.mml
+  local.mml
+  ref_assign.mml
+  ref_binop_1.mml
+  ref_binop_2.mml
+  ref_deref.mml
+  while_1.mml
+  while_2.mml
   (glob_files _wasm/*)))

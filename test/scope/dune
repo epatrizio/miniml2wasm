@@ -1,10 +1,10 @@
 (cram
  (deps
-  scope_1.mml
-  scope_2.mml
-  scope_3.mml
-  scope_4.mml
-  scope_5.mml
-  scope_6.mml
-  scope_7.mml
+  block_1.mml
+  block_2.mml
+  block_3.mml
+  global.mml
+  let.mml
+  ref.mml
+  var.mml
   (glob_files _wasm/*)))
