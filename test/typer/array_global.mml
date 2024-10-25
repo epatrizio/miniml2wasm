@@ -1,0 +1,9 @@
+(*  *)
+let arr1 = [false,false];
+let arr2 : i32[2] = [0,0];
+let i = false;
+begin
+  arr1[0] := true;  (* OK *)
+  arr2[1] := 1;     (* OK *)
+  arr1[i]           (* KO, i isn't i32 *)
+end

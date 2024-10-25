@@ -1,6 +1,7 @@
 (cram
  (deps
   array_access_indice.mml
+  array_global.mml
   array_ref.mml
   array_size.mml
   array_typ_size.mml
