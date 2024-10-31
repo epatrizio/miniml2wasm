@@ -16,6 +16,10 @@ type var_access =
   | Get
   | Set
 
+type limits =
+  | Limit_without_max of Int32.t
+  | Limit_with_max of Int32.t * Int32.t
+
 exception Compiling_error of string
 
 let error loc message =
@@ -121,8 +125,11 @@ let write_return buf = Buffer.add_char buf '\x0f'
 
 let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool -> Buffer.add_char buf '\x7f'
+  | Tarray (Ti32, _) | Tarray (Tbool, _) ->
+    (* TODO: ok ? it should be the memory pointer, so i32 ok ? *)
+    Buffer.add_char buf '\x7f'
+  | Tarray _ -> assert false (* TODO: ok ? *)
   | Tunit | Tref _ | Tunknown -> ()
-  | Tarray _ -> assert false
 
 let write_valtype = write_numtype
 
@@ -140,6 +147,18 @@ let write_blocktype buf = function
 let write_globaltype buf typ =
   write_valtype buf typ;
   write_mut buf typ
+
+let write_limits buf limits =
+  match limits with
+  | Limit_without_max min ->
+    Buffer.add_char buf '\x00';
+    write_u32 buf min
+  | Limit_with_max (min, max) ->
+    Buffer.add_char buf '\x01';
+    write_u32 buf min;
+    write_u32 buf max
+
+let write_memtype = write_limits
 
 let rec compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
@@ -215,7 +234,10 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Eident (typ, name)) stack_nb_elts env
-  | Earray_init _el -> assert false
+  | Earray_init _el ->
+    let env = Env.add_memory env in
+    (* TODO: to be continued! *)
+    Ok (buf, stack_nb_elts, env)
   | Earray (_ident, _expr) -> assert false
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
@@ -383,6 +405,16 @@ let write_function_section buf typeidxs =
   write_vector function_buf typeidxs;
   write_section buf '\x03' function_buf
 
+let write_memory_section buf env =
+  if not (Env.is_memory env) then ()
+  else
+    let memories_buf = Buffer.create 32 in
+    let memory_buf = Buffer.create 16 in
+    (* single empty linear memory *)
+    write_memtype memory_buf (Limit_without_max 0l);
+    write_vector memories_buf [ memory_buf ];
+    write_section buf '\x05' memories_buf
+
 let write_global_section buf env =
   if Env.is_empty_globals_wasm env then ()
   else
@@ -408,6 +440,7 @@ let write_start_function buf prog env =
   write_type_section buf [ functype_buf ];
   (* hard-coded: start function idx = 0 *)
   write_function_section buf [ 0 ];
+  write_memory_section buf env;
   write_global_section buf env;
   write_start_section buf;
   write_code_section buf [ code_buf ];

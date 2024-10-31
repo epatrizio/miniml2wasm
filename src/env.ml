@@ -5,6 +5,7 @@ module SMap = Map.Make (String)
 type ('a, 'b) t =
   { (* values : 'a ref SMap.t *)
     types : 'a SMap.t
+  ; memory : bool
   ; globals : string SMap.t
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
@@ -45,6 +46,12 @@ let get_type n env =
   | Some typ -> Ok typ
   | None -> Error (Format.sprintf "ident: %s not found in env.types" n)
 
+let add_memory env =
+  let memory = true in
+  { env with memory }
+
+let is_memory env = env.memory
+
 let global_wasm_idx = ref 0
 
 let add_global_wasm n data env =
@@ -79,8 +86,9 @@ let get_locals_wasm_typs env =
 
 let empty () =
   let types = SMap.empty in
+  let memory = false in
   let globals = SMap.empty in
   let locals = SMap.empty in
   let globals_wasm = [] in
   let locals_wasm = [] in
-  { types; globals; locals; globals_wasm; locals_wasm }
+  { types; memory; globals; locals; globals_wasm; locals_wasm }
