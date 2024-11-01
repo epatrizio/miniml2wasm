@@ -124,11 +124,8 @@ let write_br_if buf idx =
 let write_return buf = Buffer.add_char buf '\x0f'
 
 let write_numtype buf = function
-  | Tbool | Ti32 | Tref Ti32 | Tref Tbool -> Buffer.add_char buf '\x7f'
-  | Tarray (Ti32, _) | Tarray (Tbool, _) ->
-    (* TODO: ok ? it should be the memory pointer, so i32 ok ? *)
-    Buffer.add_char buf '\x7f'
-  | Tarray _ -> assert false (* TODO: ok ? *)
+  | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ ->
+    Buffer.add_char buf '\x7f' (* memory pointer: i32 *)
   | Tunit | Tref _ | Tunknown -> ()
 
 let write_valtype = write_numtype
@@ -160,7 +157,55 @@ let write_limits buf limits =
 
 let write_memtype = write_limits
 
-let rec compile_expr (loc, typ, expr') stack_nb_elts env =
+let write_memarg buf =
+  (* TODO *)
+  write_u32 buf 0l;
+  write_u32 buf 0l
+
+let write_store buf typ =
+  match typ with
+  | Ti32 | Tbool ->
+    Buffer.add_char buf '\x36';
+    write_memarg buf
+  | _ -> assert false
+
+(* Array representation: details in Memory module *)
+let rec compile_array_init buf pt typ el stack_nb_elts env =
+  match typ with
+  | Tarray (typ, size) when typ = Ti32 || typ = Tbool ->
+    (* 1. type id: i32 = 0 - bool = 1 *)
+    Buffer.add_char buf '\x41';
+    write_u32 buf pt;
+    Buffer.add_char buf '\x41';
+    write_u32 buf (if typ = Ti32 then 0l else 1l);
+    write_store buf typ;
+    (* 2. array_size: i32 value *)
+    Buffer.add_char buf '\x41';
+    write_u32 buf (Int32.add pt 4l);
+    Buffer.add_char buf '\x41';
+    write_u32 buf size;
+    write_store buf Ti32;
+    (* 3. array content *)
+    let _pt, _stack_nb_elts, env =
+      List.fold_left
+        (fun (pt, stack_nb_elts, env) expr ->
+          Buffer.add_char buf '\x41';
+          write_u32 buf pt;
+          let ret = compile_expr expr stack_nb_elts env in
+          match ret with
+          | Ok (expr_buf, stack_nb_elts, env) ->
+            Buffer.add_buffer buf expr_buf;
+            write_store buf typ;
+            (Int32.add pt 4l, stack_nb_elts, env)
+          | Error _ -> assert false )
+        (Int32.add pt 8l, stack_nb_elts, env)
+        el
+    in
+    env
+  | Tarray (Tbool, _size) -> assert false
+  | _ -> assert false
+
+and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
   match expr' with
   | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
@@ -234,10 +279,15 @@ let rec compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Eident (typ, name)) stack_nb_elts env
-  | Earray_init _el ->
-    let env = Env.add_memory env in
-    (* TODO: to be continued! *)
-    Ok (buf, stack_nb_elts, env)
+  | Earray_init el ->
+    let env = Env.malloc_array typ env in
+    let env =
+      compile_array_init buf env.memory.previous_pointer typ el stack_nb_elts
+        env
+    in
+    Buffer.add_char buf '\x41';
+    write_u32 buf env.memory.previous_pointer;
+    Ok (buf, stack_nb_elts + 1, env)
   | Earray (_ident, _expr) -> assert false
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
@@ -406,12 +456,12 @@ let write_function_section buf typeidxs =
   write_section buf '\x03' function_buf
 
 let write_memory_section buf env =
-  if not (Env.is_memory env) then ()
+  if Env.is_empty_memory env then ()
   else
     let memories_buf = Buffer.create 32 in
     let memory_buf = Buffer.create 16 in
-    (* single empty linear memory *)
-    write_memtype memory_buf (Limit_without_max 0l);
+    (* single linear memory: default = 1 page *)
+    write_memtype memory_buf (Limit_without_max 1l);
     write_vector memories_buf [ memory_buf ];
     write_section buf '\x05' memories_buf
 
