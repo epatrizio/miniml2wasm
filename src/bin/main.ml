@@ -69,7 +69,8 @@ let process source_code_file debug =
     let loc = Sedlexing.lexing_positions lexbuf in
     Error ("Syntax error: " ^ Ast.str_loc loc)
   | Typer.Typing_error message -> Error ("Typechecking error: " ^ message)
-  | Compiler.Compiling_error message -> Error ("Compiling error: " ^ message)
+  | Compiler_basic.Compiling_error message ->
+    Error ("Compiling error: " ^ message)
 
 (* Compiler entry point *)
 let () =
