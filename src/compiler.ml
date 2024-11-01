@@ -168,7 +168,16 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* loop end *)
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
-  | Estmt (_loc, Sarray_size (_typ, _name)) -> assert false
+  | Estmt (_loc, Sarray_size (_typ, name)) ->
+    (* 1. get array memory pointer *)
+    let idx = get_var_idx buf Get loc name env in
+    let idx = Int32.of_int idx in
+    write_u32 buf idx;
+    (* 2. size = 2nd meta data *)
+    write_i32_const_u buf 4l;
+    write_binop buf Badd;
+    write_load buf Ti32;
+    Ok (buf, stack_nb_elts + 1, env)
   | _ -> error loc "expression to be implemented!"
 
 and compile_block block stack_nb_elts env =

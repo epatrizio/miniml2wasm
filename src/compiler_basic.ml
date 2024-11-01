@@ -177,3 +177,10 @@ let write_store buf typ =
     Buffer.add_char buf '\x36';
     write_memarg buf
   | _ -> assert false
+
+let write_load buf typ =
+  match typ with
+  | Ti32 | Tbool ->
+    Buffer.add_char buf '\x28';
+    write_memarg buf
+  | _ -> assert false
