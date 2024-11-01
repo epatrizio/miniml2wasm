@@ -129,7 +129,24 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_i32_const_u buf env.memory.previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray (_ident, _expr) -> assert false
+  | Earray ((_typ, name), expr) ->
+    (* 1. get array memory pointer *)
+    let idx = get_var_idx buf Get loc name env in
+    let idx = Int32.of_int idx in
+    write_u32 buf idx;
+    (* 2. pointer beyond meta data (typ and size = 8) *)
+    write_i32_const_u buf 8l;
+    write_binop buf Badd;
+    (* 3.1 compile expr: col idx *)
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Buffer.add_buffer buf expr_buf;
+    (* 3.2 idx * typ_size : hard coded 4 (TODO) *)
+    write_i32_const_u buf 4l;
+    write_binop buf Bmul;
+    (* 3.3 move pointer *)
+    write_binop buf Badd;
+    write_load buf Ti32;
+    Ok (buf, stack_nb_elts, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
