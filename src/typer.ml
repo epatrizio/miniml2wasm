@@ -178,14 +178,12 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     let* ident_typ = Env.get_type ident_name env in
     begin
       match ident_typ with
-      | Tarray (ident_typ, _) ->
+      | Tarray (typ, _) ->
         let* (l1, t1, expr'), env = typecheck_expr expr env in
         begin
           match t1 with
           | Ti32 ->
-            Ok
-              ( (loc, typ, Earray ((ident_typ, ident_name), (l1, t1, expr')))
-              , env )
+            Ok ((loc, typ, Earray ((typ, ident_name), (l1, t1, expr'))), env)
           | _ ->
             error loc "attempt to perform an array access with a non i32 indice"
         end
