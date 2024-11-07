@@ -167,7 +167,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     in
     begin
       match typ with
-      | Tunit | Tarray _ | Tref _ | Tunknown ->
+      | Tunit | Tref _ | Tunknown ->
         error loc "attempt to init an array with non supported/uniform types"
       | typ ->
         let size = List.length el in

@@ -19,17 +19,30 @@ let malloc size mem =
    Memo: byte ref (Ex. i32 = "4" * 8)
 *)
 let malloc_array typ mem =
-  match typ with
-  | Tarray (Ti32, size) | Tarray (Tbool, size) ->
-    (* 1. *)
-    let malloc_size = 4l in
-    (* 2. *)
-    let malloc_size = Int32.add malloc_size 4l in
-    (* 3. *)
-    let malloc_size = Int32.add malloc_size (Int32.mul 4l size) in
-    let mem = malloc malloc_size mem in
-    mem
-  | _ -> assert false
+  let rec malloc_size typ =
+    match typ with
+    | Tarray (Ti32, size) | Tarray (Tbool, size) ->
+      (* 1. *)
+      let msize = 4l in
+      (* 2. *)
+      let msize = Int32.add msize 4l in
+      (* 3. *)
+      let msize = Int32.add msize (Int32.mul 4l size) in
+      msize
+    | Tarray (Tarray (typ, subarray_size), size) ->
+      (* 1. *)
+      let msize = 4l in
+      (* 2. *)
+      let msize = Int32.add msize 4l in
+      (* 3. *)
+      let subarray_size = malloc_size (Tarray (typ, subarray_size)) in
+      let msize = Int32.add msize (Int32.mul subarray_size size) in
+      msize
+    | _ -> assert false
+  in
+  let size = malloc_size typ in
+  let mem = malloc size mem in
+  mem
 
 let is_empty mem = mem.pointer = 0l
 

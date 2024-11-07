@@ -73,13 +73,11 @@ open Format
 
 let pp_sep fmt () = fprintf fmt ", "
 
-let str_typ = function
+let rec str_typ = function
   | Tunit -> "unit"
   | Tbool -> "bool"
   | Ti32 -> "i32"
-  | Tarray (Ti32, i) -> Format.sprintf {|i32[%d]|} (Int32.to_int i)
-  | Tarray (Tbool, i) -> Format.sprintf {|bool[%d]|} (Int32.to_int i)
-  | Tarray (Tunit, i) -> Format.sprintf {|unit[%d]|} (Int32.to_int i)
+  | Tarray (typ, i) -> Format.sprintf {|%s[%d]|} (str_typ typ) (Int32.to_int i)
   | _ -> assert false
 
 let print_typ fmt typ =
