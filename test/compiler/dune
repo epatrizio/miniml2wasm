@@ -1,5 +1,6 @@
 (cram
  (deps
+  array.mml
   block.mml
   if.mml
   while.mml
