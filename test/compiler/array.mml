@@ -1,0 +1,12 @@
+(* array, local and global vars manipulation *)
+let x = ref 1;
+let y = 2;
+let arr_1 = [0,1,y,3] in
+let arr_2 = [0,1+!x,2+y,3+3] in
+  begin
+    x := 2;
+    (* (0+2+2)*10-(4-2) = 4*10-2 = 38 *)
+    arr_2[0] :=
+      (arr_1[0] + !x + arr_2[1]) * 10 - (arr_2[2] - arr_1[2]);
+    arr_2[0]
+  end

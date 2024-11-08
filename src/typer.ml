@@ -153,6 +153,42 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, name)), env)
       | _ -> error loc "attempt to dereference a non reference type"
     end
+  | Earray_init el ->
+    let typ, el, _, env =
+      List.fold_left
+        (fun (typ, el, is_first, env) e ->
+          let ret = typecheck_expr e env in
+          match ret with
+          | Ok ((l, t, e'), env) when (is_first && typ = Tunknown) || typ = t ->
+            (t, el @ [ (l, t, e') ], false, env)
+          | Ok (e, env) -> (Tunknown, el @ [ e ], false, env)
+          | _ -> (Tunknown, el, false, env) )
+        (Tunknown, [], true, env) el
+    in
+    begin
+      match typ with
+      | Tunit | Tref _ | Tunknown ->
+        error loc "attempt to init an array with non supported/uniform types"
+      | typ ->
+        let size = List.length el in
+        let size = Int32.of_int size in
+        Ok ((loc, Tarray (typ, size), Earray_init el), env)
+    end
+  | Earray ((_, ident_name), expr) ->
+    let* ident_typ = Env.get_type ident_name env in
+    begin
+      match ident_typ with
+      | Tarray (typ, _) ->
+        let* (l1, t1, expr'), env = typecheck_expr expr env in
+        begin
+          match t1 with
+          | Ti32 ->
+            Ok ((loc, typ, Earray ((typ, ident_name), (l1, t1, expr'))), env)
+          | _ ->
+            error loc "attempt to perform an array access with a non i32 indice"
+        end
+      | _ -> error loc "attempt to perform an array access on a non array var"
+    end
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -190,6 +226,35 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
+  | Sarrayassign ((_, ident_name), e1, e2) ->
+    let* ident_typ = Env.get_type ident_name env in
+    begin
+      match ident_typ with
+      | Tarray (ident_typ, _) ->
+        let* (l1, t1, e1'), env = typecheck_expr e1 env in
+        begin
+          match t1 with
+          | Ti32 ->
+            let* (l2, t2, e2'), env = typecheck_expr e2 env in
+            begin
+              match t2 with
+              | t2 when ident_typ = t2 ->
+                Ok
+                  ( ( loc
+                    , Sarrayassign
+                        ((ident_typ, ident_name), (l1, t1, e1'), (l2, t2, e2'))
+                    )
+                  , env )
+              | _ ->
+                error loc
+                  "attempt to perform an array assignment with different types"
+            end
+          | _ ->
+            error loc "attempt to perform an array access with a non i32 indice"
+        end
+      | _ ->
+        error loc "attempt to perform an array assignment on a non array var"
+    end
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
@@ -202,6 +267,14 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
           | _ -> error loc "type unit is expected in the body of a while-loop"
         end
       | _ -> error loc "type bool is expected in the condition of a while-loop"
+    end
+  | Sarray_size (_, ident_name) as stmt ->
+    let* ident_typ = Env.get_type ident_name env in
+    begin
+      match ident_typ with
+      | Tarray _ -> Ok ((loc, stmt), env)
+      | _ ->
+        error loc "attempt to perform an array_size call on a non array var"
     end
   | Sprint expr ->
     let* expr, env = typecheck_expr expr env in

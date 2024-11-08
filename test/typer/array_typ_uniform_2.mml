@@ -1,0 +1,3 @@
+(* non uniform types *)
+let arr = [0,1,true] in
+  42

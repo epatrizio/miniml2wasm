@@ -1,0 +1,3 @@
+(* indice must be i32 type *)
+let arr = [0,1,2,3] in
+  arr[true]

@@ -1,0 +1,3 @@
+(* size 1 versus size 2 *)
+let arr : bool[1] = [true,true] in
+  42
