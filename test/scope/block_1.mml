@@ -1,6 +1,6 @@
 let x : i32 = 42 in
 begin
-  print y;
+  print_i32 y;
   let y = true in
-    print y
+    y
 end

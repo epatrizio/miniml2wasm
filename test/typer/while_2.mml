@@ -1,7 +1,7 @@
 let x : i32 = 1 in
 let y : i32 = 2 in
   while true do
-    print x;
-    print y;
+    print_i32 x;
+    print_i32 y;
     42
   done

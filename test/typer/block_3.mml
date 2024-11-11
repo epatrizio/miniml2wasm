@@ -3,4 +3,4 @@
 (* Only the last expression should have a type different of unit *)
 42;
 let x = 42 in
-  print x
+  x

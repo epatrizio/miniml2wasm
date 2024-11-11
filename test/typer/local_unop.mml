@@ -1,2 +1,2 @@
 let x : bool = - false in
-  print x
+  x

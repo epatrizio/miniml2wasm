@@ -1,8 +1,8 @@
 let x : i32 = 42 in
 begin
-  print x;
-  print 21 + 21;
+  print_i32 x;
+  print_i32 21 + 21;
   (1 + 2);  (* error: not unit! *)
   let y = true in
-    print y
+    y
 end

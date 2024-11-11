@@ -1,5 +1,5 @@
 let x = 40;
 let y : i32 = 2 in
-  print x + y;
-print x;
-print y   (* not in global scope! *)
+  print_i32 x + y;
+print_i32 x;
+y   (* not in global scope! *)

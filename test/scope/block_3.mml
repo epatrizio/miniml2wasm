@@ -2,8 +2,8 @@ begin
   let x : i32 = 42 in
   begin
     let y = true in
-      print y
+      y
   end;
-  print x;
-  print y (* nested blocks, y not in scope! *)
+  print_i32 x;
+  y (* nested blocks, y not in scope! *)
 end

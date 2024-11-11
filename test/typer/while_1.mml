@@ -1,6 +1,6 @@
 let x : i32 = 1 in
 let y : i32 = 2 in
   while 42 do   (* cond must be in bool type *)
-    print x;
-    print y
+    print_i32 x;
+    y
   done
