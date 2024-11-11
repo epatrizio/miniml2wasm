@@ -276,9 +276,17 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
-  | Sprint expr ->
-    let* expr, env = typecheck_expr expr env in
-    Ok ((loc, Sprint expr), env)
+  | Sprint expr -> (
+    let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
+    match typ_e with
+    | Ti32 -> Ok ((loc, Sprint (loc_e, typ_e, expr')), env)
+    | typ ->
+      let message =
+        Format.sprintf
+          {|attempt to perform a print_i32 call on a non i32 var (%s)|}
+          (str_typ typ)
+      in
+      error loc message )
 
 let typecheck_prog prog env : (prog * (typ, _) Env.t, _) result =
   let* _typ, prog, env = typecheck_block prog env in

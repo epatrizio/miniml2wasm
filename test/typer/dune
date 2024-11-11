@@ -21,6 +21,7 @@
   local_if.mml
   local_unop.mml
   local.mml
+  print_i32.mml
   ref_assign.mml
   ref_binop_1.mml
   ref_binop_2.mml
