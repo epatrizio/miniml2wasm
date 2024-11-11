@@ -158,7 +158,7 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sarray_size ident ->
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
-  | Sprint expr -> fprintf fmt {|print %a|} print_expr expr
+  | Sprint expr -> fprintf fmt {|print_i32 %a|} print_expr expr
 
 and print_block fmt = function
   | Bexpr expr -> print_expr fmt expr

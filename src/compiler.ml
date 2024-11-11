@@ -206,7 +206,12 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | _ -> error loc "expression to be implemented!"
+  | Estmt (_loc, Sprint expr) ->
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Buffer.add_buffer buf expr_buf;
+    (* WIP: 1 ? *)
+    write_call buf 0;
+    Ok (buf, stack_nb_elts, env)
 
 and compile_block block stack_nb_elts env =
   match block with
@@ -303,6 +308,23 @@ let write_type_section buf functypes =
   write_vector type_buf functypes;
   write_section buf '\x01' type_buf
 
+let write_import_print_i32 () =
+  let buf = Buffer.create 32 in
+  (* ascii: "mod" *)
+  write_bytes buf [ 109; 111; 100 ];
+  (* ascii: "print_i32" *)
+  write_bytes buf [ 112; 114; 105; 110; 116; 95; 105; 51; 50 ];
+  Buffer.add_char buf '\x00';
+  write_u32_of_int buf 0;
+  buf
+
+let write_import_section buf =
+  let _print_i32_buf = write_import_print_i32 () in
+  let import_buf = Buffer.create 16 in
+  (* TODO: [ print_i32_buf ]*)
+  write_vector import_buf [];
+  write_section buf '\x02' import_buf
+
 let write_function_section buf typeidxs =
   let function_buf = Buffer.create 16 in
   let typeidxs =
@@ -348,10 +370,15 @@ let write_start_section buf =
   write_section buf '\x08' start_buf
 
 let write_start_function buf prog env =
-  let functype_buf = encode_functype [] [] in
+  let i32_valtype_buf = Buffer.create 16 in
+  write_valtype i32_valtype_buf Ti32;
+  (* hard-coded: functype start [][] et print_i32 [i32][] *)
+  let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
+  let functype_start_buf = encode_functype [] [] in
   let* code_buf, env = encode_prog prog env in
-  write_type_section buf [ functype_buf ];
-  (* hard-coded: start function idx = 0 *)
+  write_type_section buf [ functype_start_buf; functype_print_i32_buf ];
+  write_import_section buf;
+  (* hard-coded: start function idx = 0 (print_i32 function idx = 1) *)
   write_function_section buf [ 0 ];
   write_memory_section buf env;
   write_global_section buf env;

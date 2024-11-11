@@ -1,4 +1,6 @@
 (cram
  (deps
   fact.mml
+  print.wat
+  print.js
   (glob_files _wasm/*)))

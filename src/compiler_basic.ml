@@ -101,6 +101,13 @@ let write_i32_const_s buf i =
   Buffer.add_char buf '\x41';
   write_s32 buf i
 
+let write_bytes buf il =
+  let vector_buf = Buffer.create 16 in
+  let len = List.length il in
+  List.iter (fun i -> write_byte vector_buf i) il;
+  write_u32_of_int buf len;
+  Buffer.add_buffer buf vector_buf
+
 let write_unreachable buf = Buffer.add_char buf '\x00'
 
 let write_nop buf = Buffer.add_char buf '\x01'
@@ -114,6 +121,15 @@ let write_br_if buf idx =
   write_u32_of_int buf idx
 
 let write_return buf = Buffer.add_char buf '\x0f'
+
+let write_call buf funcidx =
+  Buffer.add_char buf '\x10';
+  write_u32_of_int buf funcidx
+
+let write_call_indirect buf typeidx tableidx =
+  Buffer.add_char buf '\x11';
+  write_u32_of_int buf typeidx;
+  write_u32_of_int buf tableidx
 
 let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ ->
