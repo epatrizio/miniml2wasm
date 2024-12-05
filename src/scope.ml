@@ -3,12 +3,22 @@
 open Ast
 open Syntax
 
-let rec analyse_expr (loc, typ, expr') env =
+let rec analyse_var var env =
+  match var with
+  | Vident (typ_ident, name) ->
+    let* name = Env.get_name name env in
+    Ok (Vident (typ_ident, name), env)
+  | Varray ((typ_ident, name), expr) ->
+    let* name = Env.get_name name env in
+    let* expr, env = analyse_expr expr env in
+    Ok (Varray ((typ_ident, name), expr), env)
+
+and analyse_expr (loc, typ, expr') env =
   match expr' with
   | Ecst _cst as ecst -> Ok ((loc, typ, ecst), env)
-  | Eident (typ_ident, name) ->
-    let* name = Env.get_name name env in
-    Ok ((loc, typ, Eident (typ_ident, name)), env)
+  | Evar var ->
+    let* var, env = analyse_var var env in
+    Ok ((loc, typ, Evar var), env)
   | Eunop (unop, expr) ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, typ, Eunop (unop, expr)), env)
@@ -46,10 +56,10 @@ let rec analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Earray_init el), env)
-  | Earray ((typ_ident, name), expr) ->
-    let* name = Env.get_name name env in
+  | Earray (var, expr) ->
+    let* var, env = analyse_var var env in
     let* expr, env = analyse_expr expr env in
-    Ok ((loc, typ, Earray ((typ_ident, name), expr)), env)
+    Ok ((loc, typ, Earray (var, expr)), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)

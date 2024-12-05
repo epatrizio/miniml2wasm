@@ -1,0 +1,2 @@
+let arr = [[1,true],[2,false]] in
+  arr[0][0]  (* matrix syntax is ok *)

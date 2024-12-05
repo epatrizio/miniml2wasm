@@ -52,9 +52,13 @@ let block :=
   | ~ = expr; <Bexpr>
   | ~ = expr; SEMICOLON; ~ = block; <Bseq>
 
+let var :=
+  | ~ = ident; <Vident>
+  | ~ = ident; LBRACKET; ~ = expr; RBRACKET; <Varray>
+
 let expr_bis :=
   | ~ = CST; <Ecst>
-  | ~ = ident; <Eident>
+  | ~ = var; <Evar>
   | ~ = unop; ~ = expr; %prec UNARY_OP <Eunop>
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
   | BEGIN; ~ = block; END; <Eblock>
@@ -63,7 +67,7 @@ let expr_bis :=
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
   | LBRACKET; ~ = separated_nonempty_list(COMMA, expr); RBRACKET; <Earray_init>
-  | ~ = ident; LBRACKET; ~ = expr; RBRACKET; <Earray>
+  | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ~ = stmt; <Estmt>
 
 let expr :=

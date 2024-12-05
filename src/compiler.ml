@@ -66,6 +66,19 @@ and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
   write_binop buf Badd;
   Ok (stack_nb_elts, env)
 
+and compile_var buf loc var stack_nb_elts env =
+  match var with
+  | Vident (_typ, name) ->
+    let idx = get_var_idx buf Get loc name env in
+    write_u32_of_int buf idx;
+    Ok (buf, stack_nb_elts + 1, env)
+  | Varray ((typ, name), expr) ->
+    let* stack_nb_elts, env =
+      compile_array_pointer buf loc name expr stack_nb_elts env
+    in
+    write_load buf typ;
+    Ok (buf, stack_nb_elts, env)
+
 and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
   match expr' with
@@ -76,10 +89,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Ecst (Ci32 i32) ->
     write_i32_const_s buf i32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Eident (_typ, name) ->
-    let idx = get_var_idx buf Get loc name env in
-    write_u32_of_int buf idx;
-    Ok (buf, stack_nb_elts + 1, env)
+  | Evar var -> compile_var buf loc var stack_nb_elts env
   | Eunop (Unot, expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
@@ -137,7 +147,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
-    compile_expr (loc, typ, Eident (typ, name)) stack_nb_elts env
+    compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let env =
@@ -146,12 +156,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_i32_const_u buf env.memory.previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray ((typ, name), expr) ->
-    let* stack_nb_elts, env =
-      compile_array_pointer buf loc name expr stack_nb_elts env
-    in
-    write_load buf typ;
-    Ok (buf, stack_nb_elts, env)
+  | Earray (Vident (typ, name), expr) ->
+    compile_var buf loc (Varray ((typ, name), expr)) stack_nb_elts env
+  | Earray (Varray _, _) -> assert false (* TODO *)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in

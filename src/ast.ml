@@ -37,18 +37,22 @@ type cst =
 
 type expr = location * typ * expr'
 
+and var =
+  | Vident of ident
+  | Varray of ident * expr
+
 and expr' =
   | Ecst of cst
-  | Eident of ident
+  | Evar of var
   | Eunop of unop * expr
   | Ebinop of expr * binop * expr
   | Eblock of block
   | Eif of expr * expr * expr
   | Elet of ident * expr * expr
   | Eref of expr
-  | Ederef of ident
+  | Ederef of ident (* TODO: var ? *)
   | Earray_init of expr list
-  | Earray of ident * expr
+  | Earray of var * expr
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -116,10 +120,17 @@ let print_cst fmt = function
   | Cbool b -> pp_print_bool fmt b
   | Ci32 i32 -> pp_print_int fmt (Int32.to_int i32)
 
-let rec print_expr fmt (_, _, expr) =
+let rec print_var fmt = function
+  | Vident ident -> print_ident fmt ident
+  | Varray (ident, expr) ->
+    fprintf fmt {|%a[%a]|}
+      (print_ident ~typ_display:false)
+      ident print_expr expr
+
+and print_expr fmt (_, _, expr) =
   match expr with
   | Ecst cst -> print_cst fmt cst
-  | Eident ident -> print_ident fmt ident
+  | Evar var -> print_var fmt var
   | Eunop (unop, e) -> fprintf fmt {|%a %a|} print_unop unop print_expr e
   | Ebinop (e1, binop, e2) ->
     fprintf fmt {|%a %a %a|} print_expr e1 print_binop binop print_expr e2
@@ -134,10 +145,7 @@ let rec print_expr fmt (_, _, expr) =
   | Eref e -> fprintf fmt {|ref %a|} print_expr e
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
-  | Earray (ident, expr) ->
-    fprintf fmt {|%a[%a]|}
-      (print_ident ~typ_display:false)
-      ident print_expr expr
+  | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =

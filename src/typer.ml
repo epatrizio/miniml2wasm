@@ -88,14 +88,34 @@ and typecheck_binop_expr (loc, _typ, expr') env :
   | Ebinop (e1, Bge, e2) -> typecheck_binop_comp_expr Bge e1 e2 env
   | _ -> assert false (* call error *)
 
+and typecheck_var loc var env =
+  match var with
+  | Vident (_typ, name) ->
+    let* typ = Env.get_type name env in
+    Ok ((typ, Vident (typ, name)), env)
+  | Varray ((_typ, name), expr) ->
+    let* typ = Env.get_type name env in
+    begin
+      match typ with
+      | Tarray (typ, _) ->
+        let* (l1, t1, expr'), env = typecheck_expr expr env in
+        begin
+          match t1 with
+          | Ti32 -> Ok ((typ, Varray ((typ, name), (l1, t1, expr'))), env)
+          | _ ->
+            error loc "attempt to perform an array access with a non i32 indice"
+        end
+      | _ -> error loc "attempt to perform an array access on a non array var"
+    end
+
 and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
   match expr' with
   | Ecst c as cst ->
     let typ = typecheck_cst c in
     Ok ((loc, typ, cst), env)
-  | Eident (_typ, name) ->
-    let* typ = Env.get_type name env in
-    Ok ((loc, typ, Eident (typ, name)), env)
+  | Evar var ->
+    let* (typ, var), env = typecheck_var loc var env in
+    Ok ((loc, typ, Evar var), env)
   | Eunop (_unop, _expr) as unop_expr ->
     typecheck_unop_expr (loc, typ, unop_expr) env
   | Ebinop (_e1, _binop, _e2) as binop_expr ->
@@ -174,21 +194,10 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         let size = Int32.of_int size in
         Ok ((loc, Tarray (typ, size), Earray_init el), env)
     end
-  | Earray ((_, ident_name), expr) ->
-    let* ident_typ = Env.get_type ident_name env in
-    begin
-      match ident_typ with
-      | Tarray (typ, _) ->
-        let* (l1, t1, expr'), env = typecheck_expr expr env in
-        begin
-          match t1 with
-          | Ti32 ->
-            Ok ((loc, typ, Earray ((typ, ident_name), (l1, t1, expr'))), env)
-          | _ ->
-            error loc "attempt to perform an array access with a non i32 indice"
-        end
-      | _ -> error loc "attempt to perform an array access on a non array var"
-    end
+  | Earray (var, expr) ->
+    let* (typ, var), env = typecheck_var loc var env in
+    let* expr, env = typecheck_expr expr env in
+    Ok ((loc, typ, Earray (var, expr)), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
