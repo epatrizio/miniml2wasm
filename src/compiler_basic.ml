@@ -58,6 +58,13 @@ let get_blocktype = function
   | Tref _ -> assert false
   | Tunknown -> assert false
 
+let get_type_id_for_array = function
+  | Ti32 -> 0l
+  | Tbool -> 1l
+  | Tarray (Ti32, _) -> 2l
+  | Tarray (Tbool, _) -> 3l
+  | _ -> assert false
+
 (* add byte from int (ascii code) *)
 let write_byte buf i =
   let c = Char.chr (i land 0xff) in
@@ -189,14 +196,14 @@ let write_memarg buf =
 
 let write_store buf typ =
   match typ with
-  | Ti32 | Tbool ->
+  | Ti32 | Tbool | Tarray _ ->
     Buffer.add_char buf '\x36';
     write_memarg buf
   | _ -> assert false
 
 let write_load buf typ =
   match typ with
-  | Ti32 | Tbool ->
+  | Ti32 | Tbool | Tarray _ ->
     Buffer.add_char buf '\x28';
     write_memarg buf
   | _ -> assert false

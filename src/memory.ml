@@ -17,26 +17,24 @@ let malloc size mem =
      2. array_size: i32  - meta data
      3. array content length: array_size*type_len (i32)
    Memo: byte ref (Ex. i32 = "4" * 8)
+
+   Restriction: 2-dim array max, i32 data
+   2-dim array compilation schema: data = subarray pointer
+    (check Compiler_basic.get_type_id_for_array)
 *)
 let malloc_array typ mem =
-  let rec malloc_size typ =
+  let malloc_size typ =
     match typ with
-    | Tarray (Ti32, size) | Tarray (Tbool, size) ->
+    | Tarray (Ti32, size)
+    | Tarray (Tbool, size)
+    | Tarray (Tarray (Ti32, _), size)
+    | Tarray (Tarray (Tbool, _), size) ->
       (* 1. *)
       let msize = 4l in
       (* 2. *)
       let msize = Int32.add msize 4l in
       (* 3. *)
       let msize = Int32.add msize (Int32.mul 4l size) in
-      msize
-    | Tarray (Tarray (typ, subarray_size), size) ->
-      (* 1. *)
-      let msize = 4l in
-      (* 2. *)
-      let msize = Int32.add msize 4l in
-      (* 3. *)
-      let subarray_size = malloc_size (Tarray (typ, subarray_size)) in
-      let msize = Int32.add msize (Int32.mul subarray_size size) in
       msize
     | _ -> assert false
   in

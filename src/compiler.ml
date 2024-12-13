@@ -22,10 +22,11 @@ let write_section buf id content =
 (* Array representation: details in Memory module *)
 let rec compile_array_init buf pt typ el stack_nb_elts env =
   match typ with
-  | Tarray (typ, size) when typ = Ti32 || typ = Tbool ->
-    (* 1. type id: i32 = 0 - bool = 1 *)
+  | Tarray (typ, size) ->
+    (* 1. type i32 id: check get_type_id_for_array for supported types *)
+    let typ_i32 = get_type_id_for_array typ in
     write_i32_const_u buf pt;
-    write_i32_const_u buf (if typ = Ti32 then 0l else 1l);
+    write_i32_const_u buf typ_i32;
     write_store buf typ;
     (* 2. array_size: i32 value *)
     write_i32_const_u buf (Int32.add pt 4l);
@@ -34,14 +35,23 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
     (* 3. array content *)
     let _pt, _stack_nb_elts, env =
       List.fold_left
-        (fun (pt, stack_nb_elts, env) expr ->
-          write_i32_const_u buf pt;
+        (fun (pt, stack_nb_elts, (env : _ Env.t)) expr ->
           let ret = compile_expr expr stack_nb_elts env in
           match ret with
-          | Ok (expr_buf, stack_nb_elts, env) ->
-            Buffer.add_buffer buf expr_buf;
-            write_store buf typ;
-            (Int32.add pt 4l, stack_nb_elts, env)
+          | Ok (expr_buf, stack_nb_elts, env) -> begin
+            match typ with
+            | Ti32 | Tbool ->
+              write_i32_const_u buf pt;
+              Buffer.add_buffer buf expr_buf;
+              write_store buf typ;
+              (Int32.add pt 4l, stack_nb_elts, env)
+            | Tarray (Ti32, _) | Tarray (Tbool, _) ->
+              write_i32_const_u buf pt;
+              write_i32_const_u buf env.memory.previous_pointer;
+              write_store buf typ;
+              (Int32.add pt 4l, stack_nb_elts, env)
+            | _ -> assert false
+          end
           | Error _ -> assert false )
         (Int32.add pt 8l, stack_nb_elts, env)
         el
@@ -156,9 +166,12 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_i32_const_u buf env.memory.previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray (Vident (typ, name), expr) ->
-    compile_var buf loc (Varray ((typ, name), expr)) stack_nb_elts env
-  | Earray (Varray _, _) -> assert false (* TODO *)
+  | Earray (_var, expr) ->
+    (* let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in *)
+    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    Buffer.add_buffer buf expr_buf;
+    Ok (buf, stack_nb_elts, env)
+    (* assert false *)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
