@@ -20,12 +20,14 @@ let rec typecheck_unop_expr (loc, _typ, expr') env :
   | Eunop (Unot, expr) -> (
     let* (l, t, expr'), env = typecheck_expr expr env in
     match t with
-    | Tbool -> Ok ((loc, Tbool, Eunop (Unot, (l, t, expr'))), env)
+    | Tbool | Tarray (Tbool, _) ->
+      Ok ((loc, Tbool, Eunop (Unot, (l, t, expr'))), env)
     | _ -> error loc "attempt to perform unop 'not' on a non boolean type" )
   | Eunop (Uminus, expr) -> (
     let* (l, t, expr'), env = typecheck_expr expr env in
     match t with
-    | Ti32 -> Ok ((loc, Ti32, Eunop (Uminus, (l, t, expr'))), env)
+    | Ti32 | Tarray (Ti32, _) ->
+      Ok ((loc, Ti32, Eunop (Uminus, (l, t, expr'))), env)
     | _ -> error loc "attempt to perform unop '-' on a non i32 type" )
   | _ -> assert false (* call error *)
 
@@ -35,7 +37,10 @@ and typecheck_binop_expr (loc, _typ, expr') env :
     let* (l1, typ1, e1'), env = typecheck_expr e1 env in
     let* (l2, typ2, e2'), env = typecheck_expr e2 env in
     match (typ1, typ2) with
-    | Ti32, Ti32 ->
+    | Ti32, Ti32
+    | Tarray (Ti32, _), Tarray (Ti32, _)
+    | Ti32, Tarray (Ti32, _)
+    | Tarray (Ti32, _), Ti32 ->
       Ok ((loc, Ti32, Ebinop ((l1, typ1, e1'), binop, (l2, typ2, e2'))), env)
     | _ ->
       let message =
