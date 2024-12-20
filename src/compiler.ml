@@ -33,7 +33,7 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
     write_i32_const_u buf size;
     write_store buf Ti32;
     (* 3. array content *)
-    let _pt, _stack_nb_elts, env =
+    let _pt, stack_nb_elts, env =
       List.fold_left
         (fun (pt, stack_nb_elts, (env : _ Env.t)) expr ->
           let ret = compile_expr expr stack_nb_elts env in
@@ -44,11 +44,12 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
               write_i32_const_u buf pt;
               Buffer.add_buffer buf expr_buf;
               write_store buf typ;
-              (Int32.add pt 4l, stack_nb_elts, env)
+              (Int32.add pt 4l, stack_nb_elts - 1, env)
             | Tarray (Ti32, _) | Tarray (Tbool, _) ->
               write_i32_const_u buf pt;
               write_i32_const_u buf env.memory.previous_pointer;
               write_store buf typ;
+              Buffer.add_buffer buf expr_buf;
               (Int32.add pt 4l, stack_nb_elts, env)
             | _ -> assert false
           end
@@ -56,7 +57,7 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
         (Int32.add pt 8l, stack_nb_elts, env)
         el
     in
-    env
+    (stack_nb_elts, env)
   | _ -> assert false
 
 and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
@@ -161,7 +162,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in
-    let env =
+    let stack_nb_elts, env =
       compile_array_init buf env.memory.previous_pointer typ el stack_nb_elts
         env
     in
