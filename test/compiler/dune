@@ -3,5 +3,6 @@
   array.mml
   block.mml
   if.mml
+  matrix.mml
   while.mml
   (glob_files _wasm/*)))

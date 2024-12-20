@@ -64,16 +64,20 @@ and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
   (* 1. get array memory pointer *)
   let idx = get_var_idx buf Get loc name env in
   write_u32_of_int buf idx;
-  (* 2. pointer beyond meta data (typ and size = 8) *)
+  (* 2. *)
+  compile_array_pointer_from_pt buf idx_expr stack_nb_elts env
+
+and compile_array_pointer_from_pt buf idx_expr stack_nb_elts env =
+  (* 1. pointer beyond meta data (typ and size = 8) *)
   write_i32_const_u buf 8l;
   write_binop buf Badd;
-  (* 3.1 compile expr: col idx *)
+  (* 2.1 compile expr: col idx *)
   let* expr_buf, stack_nb_elts, env = compile_expr idx_expr stack_nb_elts env in
   Buffer.add_buffer buf expr_buf;
-  (* 3.2 idx * typ_size : hard coded 4 (TODO) *)
+  (* 2.2 idx * typ_size : hard coded 4 (TODO) *)
   write_i32_const_u buf 4l;
   write_binop buf Bmul;
-  (* 3.3 move pointer *)
+  (* 2.3 move pointer *)
   write_binop buf Badd;
   Ok (stack_nb_elts, env)
 
@@ -168,12 +172,14 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray (_var, expr) ->
-    (* let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in *)
-    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
-    Buffer.add_buffer buf expr_buf;
-    Ok (buf, stack_nb_elts, env)
-    (* assert false *)
+  | Earray (var, expr) ->
+    (* a[idx0][idx1] var = a[idx0] = sub_array pointer -- expr = sub_array field *)
+    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
+    let* stack_nb_elts, env =
+      compile_array_pointer_from_pt buf expr stack_nb_elts env
+    in
+    write_load buf typ;
+    Ok (buf, stack_nb_elts - 1, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
