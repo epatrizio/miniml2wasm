@@ -160,11 +160,12 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
   | Earray_init el ->
     let env = Env.malloc_array typ env in
+    let previous_pointer = env.memory.previous_pointer in
     let env =
       compile_array_init buf env.memory.previous_pointer typ el stack_nb_elts
         env
     in
-    write_i32_const_u buf env.memory.previous_pointer;
+    write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
   | Earray (_var, expr) ->
     (* let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in *)
