@@ -23,6 +23,24 @@ factorial:
   stack        : [  ]
   running instr: local.get 0
   stack        : [ i32.const 6 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 6 ]
+  running instr: i32.ge_s
+  stack        : [ i32.const 1 ]
+  running instr: (if  
+    (then
+      nop
+    )
+    (else
+      unreachable
+    )
+  )
+  stack        : [  ]
+  running instr: nop
+  stack        : [  ]
+  stack        : [  ]
+  running instr: local.get 0
+  stack        : [ i32.const 6 ]
   running instr: global.set 0
   stack        : [  ]
   running instr: loop   <expr>

@@ -2,6 +2,7 @@
 let fact : i32 ref = ref 0;
 let n : i32 ref = ref 6 in
   begin
+    assert (!n >= 0);
     fact := !n;
     while !n > 2 do
       n := !n - 1;
