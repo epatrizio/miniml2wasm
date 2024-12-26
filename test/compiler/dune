@@ -1,6 +1,7 @@
 (cram
  (deps
   array.mml
+  assert.mml
   block.mml
   if.mml
   matrix.mml

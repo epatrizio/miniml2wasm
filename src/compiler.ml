@@ -234,12 +234,21 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Estmt (_loc, Sassert _expr) -> assert false
+  | Estmt (loc, Sassert expr) ->
+    let e_then = (loc, Tunit, Estmt (loc, Snop)) in
+    let e_else = (loc, Tunit, Estmt (loc, Sunreachable)) in
+    compile_expr (loc, Tunit, Eif (expr, e_then, e_else)) stack_nb_elts env
   | Estmt (_loc, Sprint expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
     (* WIP: 1 ? *)
     write_call buf 0;
+    Ok (buf, stack_nb_elts, env)
+  | Estmt (_loc, Sunreachable) ->
+    write_unreachable buf;
+    Ok (buf, stack_nb_elts, env)
+  | Estmt (_loc, Snop) ->
+    write_nop buf;
     Ok (buf, stack_nb_elts, env)
 
 and compile_block block stack_nb_elts env =

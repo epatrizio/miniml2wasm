@@ -312,6 +312,8 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
           (str_typ typ)
       in
       error loc message )
+  | Sunreachable -> Ok ((loc, Sunreachable), env)
+  | Snop -> Ok ((loc, Snop), env)
 
 let typecheck_prog prog env : (prog * (typ, _) Env.t, _) result =
   let* _typ, prog, env = typecheck_block prog env in

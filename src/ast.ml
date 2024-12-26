@@ -69,6 +69,8 @@ and stmt' =
   | Sarray_size of ident
   | Sassert of expr
   | Sprint of expr
+  | Sunreachable
+  | Snop
 
 type prog = block
 
@@ -169,6 +171,8 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
   | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr
   | Sprint expr -> fprintf fmt {|print_i32 %a|} print_expr expr
+  | Sunreachable -> fprintf fmt {|unreachable|}
+  | Snop -> fprintf fmt {|nop|}
 
 and print_block fmt = function
   | Bexpr expr -> print_expr fmt expr

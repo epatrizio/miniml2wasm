@@ -102,5 +102,7 @@ and analyse_stmt (loc, stmt') env =
   | Sprint expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sprint expr), env)
+  | Sunreachable -> Ok ((loc, Sunreachable), env)
+  | Snop -> Ok ((loc, Snop), env)
 
 let analysis = analyse_block
