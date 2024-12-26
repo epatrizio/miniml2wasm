@@ -67,6 +67,7 @@ and stmt' =
   | Sarrayassign of ident * expr * expr
   | Swhile of expr * block
   | Sarray_size of ident
+  | Sassert of expr
   | Sprint of expr
 
 type prog = block
@@ -166,6 +167,7 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sarray_size ident ->
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
+  | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr
   | Sprint expr -> fprintf fmt {|print_i32 %a|} print_expr expr
 
 and print_block fmt = function

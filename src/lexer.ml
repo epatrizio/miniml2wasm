@@ -65,6 +65,7 @@ let rec token buf =
   | "||" -> OR
   | "not" -> NOT
   | "array_size" -> ARRAY_SIZE
+  | "assert" -> ASSERT
   | "print_i32" -> PRINT_I32
   | "unit" -> TUNIT
   | "bool" -> TBOOL

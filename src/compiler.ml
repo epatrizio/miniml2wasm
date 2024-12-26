@@ -234,6 +234,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
+  | Estmt (_loc, Sassert _expr) -> assert false
   | Estmt (_loc, Sprint expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;

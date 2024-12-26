@@ -11,6 +11,7 @@
   array_typ_uniform_1.mml
   array_typ_uniform_2.mml
   array_var.mml
+  assert.mml
   binop_bool.mml
   binop_ge.mml
   binop_min.mml

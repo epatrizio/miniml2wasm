@@ -96,6 +96,9 @@ and analyse_stmt (loc, stmt') env =
   | Sarray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, Sarray_size (typ_ident, name)), env)
+  | Sassert expr ->
+    let* expr, env = analyse_expr expr env in
+    Ok ((loc, Sassert expr), env)
   | Sprint expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sprint expr), env)

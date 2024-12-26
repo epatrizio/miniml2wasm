@@ -1,12 +1,13 @@
 %token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF PRINT_I32 ARRAY_SIZE
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF ASSERT PRINT_I32 ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
 
 // %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
 
-(* tmp (PRINT_I32 token): it should be a func call ? *)
+(* tmp (ASSERT _ PRINT_I32 tokens): it should be a func call ? *)
+%nonassoc ASSERT
 %nonassoc PRINT_I32
 
 %right OR
@@ -42,8 +43,9 @@ let stmt_bis :=
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
   | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
-  | PRINT_I32; ~ = expr; <Sprint>
   | ARRAY_SIZE; ~ = ident; <Sarray_size>
+  | ASSERT; ~ = expr; <Sassert>
+  | PRINT_I32; ~ = expr; <Sprint>
 
 let stmt :=
   | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
