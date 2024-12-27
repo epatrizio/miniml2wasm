@@ -11,14 +11,6 @@ written in [OCaml](https://ocaml.org) with the [Dune](https://dune.build) build 
 Debug mode displays the `miniml` input file twice in the console:
 original version - after scope analysis version (variables renamed with a unique name).
 
-<!-- $MDX file=test/42.mml -->
-```ml
-(* type is optional, it can be inferred *)
-let x = 40;           (* global scope *)
-let y : i32 = 2 in    (* local scope *)
-  (x + y)
-```
-
 ```sh
 $ dune exec -- miniml2wasm --help
 usage: dune exec miniml2wasm -- file_name.ml [options]
@@ -42,6 +34,51 @@ Summary of supported language features:
 - Value types: unit, bool, i32, reference of type, array of type (fixed size)
 - Expressions: Constants, unary and binary operations, blocks, if condition, let binding local and global, array
 - Statements: assignements, while loop, array_size and print primitives
+
+Example of some language main features:
+
+<!-- $MDX file=test/42.mml -->
+```ml
+(* supported types: unit, bool, i32, ref, array, 2-dim matrix *)
+(* type is optional, it can be inferred *)
+
+(* global scope *)
+
+let x = 40;
+(* let arr : bool[2] = [true,true]; *)
+(* array are not supported in a global context *)
+
+(* local scope *)
+
+(* var is immutable by default *)
+let y : i32 = 2 in
+(* var should by mutable *)
+let z : i32 ref = ref 0 in
+(* array construct *)
+(* array must be initialized to set the fully type (elements type and size) *)
+let array : bool[2] = [true,true] in
+(* matrix construct *)
+let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
+  begin  (* block *)
+    (* primitive function: assert. If false-cond, a trap is emit *)
+    assert true;
+    while true do (* loop-cond must be in bool type *)
+      (* mutable var assign *)
+      z := 42;
+      (* array col assign *)
+      array[0] := false;
+      (* if-cond must be in bool type *)
+      (* imported function: print_i32 *)
+      if not true then print_i32 42
+      else print_i32 -42;
+      (* primitive function: array_size *)
+      array_size array
+    done;
+    (* unary opertations: - not *)
+    (* binary opertations: + - * / == != < <= > => *)
+    (x + y)
+  end
+```
 
 Compilation steps:
 

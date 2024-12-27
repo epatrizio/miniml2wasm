@@ -1,4 +1,39 @@
+(* supported types: unit, bool, i32, ref, array, 2-dim matrix *)
 (* type is optional, it can be inferred *)
-let x = 40;           (* global scope *)
-let y : i32 = 2 in    (* local scope *)
-  (x + y)
+
+(* global scope *)
+
+let x = 40;
+(* let arr : bool[2] = [true,true]; *)
+(* array are not supported in a global context *)
+
+(* local scope *)
+
+(* var is immutable by default *)
+let y : i32 = 2 in
+(* var should by mutable *)
+let z : i32 ref = ref 0 in
+(* array construct *)
+(* array must be initialized to set the fully type (elements type and size) *)
+let array : bool[2] = [true,true] in
+(* matrix construct *)
+let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
+  begin  (* block *)
+    (* primitive function: assert. If false-cond, a trap is emit *)
+    assert true;
+    while true do (* loop-cond must be in bool type *)
+      (* mutable var assign *)
+      z := 42;
+      (* array col assign *)
+      array[0] := false;
+      (* if-cond must be in bool type *)
+      (* imported function: print_i32 *)
+      if not true then print_i32 42
+      else print_i32 -42;
+      (* primitive function: array_size *)
+      array_size array
+    done;
+    (* unary opertations: - not *)
+    (* binary opertations: + - * / == != < <= > => *)
+    (x + y)
+  end
