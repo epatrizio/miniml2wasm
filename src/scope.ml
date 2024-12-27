@@ -60,6 +60,7 @@ and analyse_expr (loc, typ, expr') env =
     let* var, env = analyse_var var env in
     let* expr, env = analyse_expr expr env in
     Ok ((loc, typ, Earray (var, expr)), env)
+  | Eread -> Ok ((loc, typ, Eread), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)

@@ -180,6 +180,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts - 1, env)
+  | Eread -> assert false
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in

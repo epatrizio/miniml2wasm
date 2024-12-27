@@ -203,6 +203,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     let* (typ, var), env = typecheck_var loc var env in
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, typ, Earray (var, expr)), env)
+  | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)

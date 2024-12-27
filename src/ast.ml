@@ -53,6 +53,7 @@ and expr' =
   | Ederef of ident (* TODO: var ? *)
   | Earray_init of expr list
   | Earray of var * expr
+  | Eread
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -149,6 +150,7 @@ and print_expr fmt (_, _, expr) =
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
   | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
+  | Eread -> fprintf fmt {|read_i32|}
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =
