@@ -1,0 +1,4 @@
+(* s is not an i32 *)
+let a = [0,1,2,3] in
+let s : bool = array_size a in
+  s
