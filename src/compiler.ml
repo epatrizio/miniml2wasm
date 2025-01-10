@@ -180,7 +180,10 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts - 1, env)
-  | Eread -> assert false
+  | Eread ->
+    (* WIP: 2 *)
+    write_call buf 0;
+    Ok (buf, stack_nb_elts + 1, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
@@ -242,7 +245,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Estmt (_loc, Sprint expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
-    (* WIP: 1 ? *)
+    (* WIP: 1 *)
     write_call buf 0;
     Ok (buf, stack_nb_elts, env)
   | Estmt (_loc, Sunreachable) ->
@@ -354,13 +357,28 @@ let write_import_print_i32 () =
   (* ascii: "print_i32" *)
   write_bytes buf [ 112; 114; 105; 110; 116; 95; 105; 51; 50 ];
   Buffer.add_char buf '\x00';
-  write_u32_of_int buf 0;
+  (* hard-coded: typeidx 1 *)
+  write_u32_of_int buf 1;
+  buf
+
+let write_import_read_i32 () =
+  let buf = Buffer.create 32 in
+  (* ascii: "mod" *)
+  write_bytes buf [ 109; 111; 100 ];
+  (* ascii: "read_i32" *)
+  write_bytes buf [ 114; 101; 97; 100; 95; 105; 51; 50 ];
+  Buffer.add_char buf '\x00';
+  (* hard-coded: typeidx 2 *)
+  write_u32_of_int buf 2;
   buf
 
 let write_import_section buf =
   let _print_i32_buf = write_import_print_i32 () in
+  let _read_i32_buf = write_import_read_i32 () in
   let import_buf = Buffer.create 16 in
-  (* TODO: [ print_i32_buf ]*)
+  (* TODO: [ print_i32_buf; read_i32_buf ]
+     if still imported, the interpreter must define them!
+  *)
   write_vector import_buf [];
   write_section buf '\x02' import_buf
 
@@ -404,20 +422,22 @@ let write_code_section buf codes =
 
 let write_start_section buf =
   let start_buf = Buffer.create 2 in
-  (* hard-coded: start function idx = 0 *)
+  (* hard-coded: start function idx = 0
+     idx should be 2 if print_i32 and read_i32 were imported *)
   write_u32_of_int start_buf 0;
   write_section buf '\x08' start_buf
 
 let write_start_function buf prog env =
   let i32_valtype_buf = Buffer.create 16 in
   write_valtype i32_valtype_buf Ti32;
-  (* hard-coded: functype start [][] et print_i32 [i32][] *)
-  let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
+  (* hard-coded: (0) functype start [][] - (1) print_i32 [i32][] - (2) read_i32 []][i32] *)
   let functype_start_buf = encode_functype [] [] in
+  let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
+  let functype_read_i32_buf = encode_functype [] [ i32_valtype_buf ] in
   let* code_buf, env = encode_prog prog env in
-  write_type_section buf [ functype_start_buf; functype_print_i32_buf ];
+  write_type_section buf
+    [ functype_start_buf; functype_print_i32_buf; functype_read_i32_buf ];
   write_import_section buf;
-  (* hard-coded: start function idx = 0 (print_i32 function idx = 1) *)
   write_function_section buf [ 0 ];
   write_memory_section buf env;
   write_global_section buf env;

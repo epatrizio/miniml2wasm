@@ -13,6 +13,8 @@ let x = 40;
 let y : i32 = 2 in
 (* var should by mutable *)
 let z : i32 ref = ref 0 in
+(* user input *)
+let r : i32 = read_i32 in
 (* array construct *)
 (* array must be initialized to set the fully type (elements type and size) *)
 let array : bool[2] = [true,true] in
