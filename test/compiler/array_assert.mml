@@ -1,0 +1,5 @@
+let arr = [0,1,2,3,42] in
+  begin
+    assert ((array_size arr) == 5);
+    arr[4]
+  end
