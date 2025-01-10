@@ -53,6 +53,7 @@ and expr' =
   | Ederef of ident (* TODO: var ? *)
   | Earray_init of expr list
   | Earray of var * expr
+  | Earray_size of ident
   | Eread
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
@@ -67,7 +68,6 @@ and stmt' =
   | Srefassign of ident * expr
   | Sarrayassign of ident * expr * expr
   | Swhile of expr * block
-  | Sarray_size of ident
   | Sassert of expr
   | Sprint of expr
   | Sunreachable
@@ -150,6 +150,8 @@ and print_expr fmt (_, _, expr) =
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
   | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
+  | Earray_size ident ->
+    fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
   | Eread -> fprintf fmt {|read_i32|}
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
@@ -169,8 +171,6 @@ and print_stmt fmt (_, stmt) =
       ident print_expr e1 print_expr e2
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
-  | Sarray_size ident ->
-    fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
   | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr
   | Sprint expr -> fprintf fmt {|print_i32 %a|} print_expr expr
   | Sunreachable -> fprintf fmt {|unreachable|}

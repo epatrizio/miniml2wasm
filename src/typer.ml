@@ -203,6 +203,14 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     let* (typ, var), env = typecheck_var loc var env in
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, typ, Earray (var, expr)), env)
+  | Earray_size (_, ident_name) as stmt ->
+    let* ident_typ = Env.get_type ident_name env in
+    begin
+      match ident_typ with
+      | Tarray _ -> Ok ((loc, Ti32, stmt), env)
+      | _ ->
+        error loc "attempt to perform an array_size call on a non array var"
+    end
   | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
@@ -282,14 +290,6 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
           | _ -> error loc "type unit is expected in the body of a while-loop"
         end
       | _ -> error loc "type bool is expected in the condition of a while-loop"
-    end
-  | Sarray_size (_, ident_name) as stmt ->
-    let* ident_typ = Env.get_type ident_name env in
-    begin
-      match ident_typ with
-      | Tarray _ -> Ok ((loc, stmt), env)
-      | _ ->
-        error loc "attempt to perform an array_size call on a non array var"
     end
   | Sassert expr -> (
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in

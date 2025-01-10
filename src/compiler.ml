@@ -180,6 +180,15 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts - 1, env)
+  | Earray_size (_typ, name) ->
+    (* 1. get array memory pointer *)
+    let idx = get_var_idx buf Get loc name env in
+    write_u32_of_int buf idx;
+    (* 2. size = 2nd meta data *)
+    write_i32_const_u buf 4l;
+    write_binop buf Badd;
+    write_load buf Ti32;
+    Ok (buf, stack_nb_elts + 1, env)
   | Eread ->
     (* WIP: 2 *)
     write_call buf 0;
@@ -229,15 +238,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* loop end *)
     Buffer.add_char buf '\x0b';
     Ok (buf, stack_nb_elts - 1, env)
-  | Estmt (_loc, Sarray_size (_typ, name)) ->
-    (* 1. get array memory pointer *)
-    let idx = get_var_idx buf Get loc name env in
-    write_u32_of_int buf idx;
-    (* 2. size = 2nd meta data *)
-    write_i32_const_u buf 4l;
-    write_binop buf Badd;
-    write_load buf Ti32;
-    Ok (buf, stack_nb_elts + 1, env)
   | Estmt (loc, Sassert expr) ->
     let e_then = (loc, Tunit, Estmt (loc, Snop)) in
     let e_else = (loc, Tunit, Estmt (loc, Sunreachable)) in

@@ -60,6 +60,9 @@ and analyse_expr (loc, typ, expr') env =
     let* var, env = analyse_var var env in
     let* expr, env = analyse_expr expr env in
     Ok ((loc, typ, Earray (var, expr)), env)
+  | Earray_size (typ_ident, name) ->
+    let* name = Env.get_name name env in
+    Ok ((loc, typ, Earray_size (typ_ident, name)), env)
   | Eread -> Ok ((loc, typ, Eread), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
@@ -94,9 +97,6 @@ and analyse_stmt (loc, stmt') env =
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in
     Ok ((loc, Swhile (expr, block)), env)
-  | Sarray_size (typ_ident, name) ->
-    let* name = Env.get_name name env in
-    Ok ((loc, Sarray_size (typ_ident, name)), env)
   | Sassert expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sassert expr), env)

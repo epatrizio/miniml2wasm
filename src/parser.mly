@@ -43,7 +43,6 @@ let stmt_bis :=
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
   | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
-  | ARRAY_SIZE; ~ = ident; <Sarray_size>
   | ASSERT; ~ = expr; <Sassert>
   | PRINT_I32; ~ = expr; <Sprint>
 
@@ -70,6 +69,7 @@ let expr_bis :=
   | EXCL; ~ = ident; <Ederef>
   | LBRACKET; ~ = separated_nonempty_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
+  | ARRAY_SIZE; ~ = ident; <Earray_size>
   | READ_I32; { Eread }
   | ~ = stmt; <Estmt>
 
