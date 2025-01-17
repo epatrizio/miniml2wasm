@@ -15,6 +15,7 @@ original version - after scope analysis version (variables renamed with a unique
 $ dune exec -- miniml2wasm --help
 usage: dune exec miniml2wasm -- file_name.ml [options]
   --debug  Debug mode
+  --unused-vars  Unused variables checking
   -help  Display this list of options
   --help  Display this list of options
 ```

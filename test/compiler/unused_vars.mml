@@ -1,0 +1,6 @@
+let g1 = 11;
+let g2 = 12;    (* unused *)
+
+let l1 = 21 in  (* unused *)
+let l2 = 22 in
+  (g1 + l2)

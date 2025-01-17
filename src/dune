@@ -10,7 +10,8 @@
   parser
   scope
   syntax
-  typer)
+  typer
+  unused_vars)
  (preprocess
   (pps sedlex.ppx))
  (libraries sedlex menhirLib))

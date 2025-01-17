@@ -4,11 +4,16 @@ open Syntax
 
 let debug = ref false
 
+let unused_vars_checking = ref false
+
 let in_file_name = ref ""
 
 let set_file s = in_file_name := s
 
-let options = [ ("--debug", Arg.Set debug, " Debug mode") ]
+let options =
+  [ ("--debug", Arg.Set debug, " Debug mode")
+  ; ("--unused-vars", Arg.Set unused_vars_checking, " Unused variables checking")
+  ]
 
 let usage = "usage: dune exec miniml2wasm -- file_name.ml [options]"
 
@@ -35,7 +40,7 @@ let wasm_file source_code_file wasm_bytes =
   Out_channel.close oc;
   print_endline message
 
-let process source_code_file debug =
+let process source_code_file debug unused_vars_checking =
   let ic = open_in source_code_file in
   let lexbuf = Sedlexing.Utf8.from_channel ic in
   try
@@ -48,6 +53,12 @@ let process source_code_file debug =
       print_endline "debug mode";
       print_endline "raw input program:";
       Ast.print_prog Format.std_formatter prog
+    end;
+    if unused_vars_checking then begin
+      print_endline "unused vars checking ...";
+      match Unused_vars.analysis prog with
+      | Ok vars_use -> Unused_vars.print_analysis vars_use
+      | Error err_msg -> print_string err_msg
     end;
     let env = Env.empty () in
     print_endline "scope analysing ...";
@@ -75,6 +86,6 @@ let process source_code_file debug =
 (* Compiler entry point *)
 let () =
   Arg.parse options set_file usage;
-  match process !in_file_name !debug with
+  match process !in_file_name !debug !unused_vars_checking with
   | Ok () -> ()
   | Error message -> eprintf "%s@." message

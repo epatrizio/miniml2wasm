@@ -6,5 +6,6 @@
   block.mml
   if.mml
   matrix.mml
+  unused_vars.mml
   while.mml
   (glob_files _wasm/*)))
