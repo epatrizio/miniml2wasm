@@ -8,6 +8,7 @@ type typ =
   | Ti32
   | Tref of typ
   | Tarray of typ * Int32.t
+  | Tfun of typ list * typ
   | Tunknown
 
 type ident = typ * string
@@ -54,6 +55,7 @@ and expr' =
   | Earray_init of expr list
   | Earray of var * expr
   | Earray_size of ident
+  | Efun_init of ident list * typ * block
   | Eread
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
@@ -85,14 +87,18 @@ let rec str_typ = function
   | Tunit -> "unit"
   | Tbool -> "bool"
   | Ti32 -> "i32"
-  | Tarray (typ, i) -> Format.sprintf {|%s[%d]|} (str_typ typ) (Int32.to_int i)
+  | Tarray (typ, i) -> sprintf {|%s[%d]|} (str_typ typ) (Int32.to_int i)
+  | Tfun (arg_typs, ret_typ) ->
+    let typs = arg_typs @ [ ret_typ ] in
+    let typs = List.map str_typ typs in
+    String.concat " -> " typs
   | _ -> assert false
 
 let print_typ fmt typ =
   pp_print_string fmt
   @@
   match typ with
-  | Tref typ -> Format.sprintf {|%s ref|} (str_typ typ)
+  | Tref typ -> sprintf {|%s ref|} (str_typ typ)
   | Tunknown -> "unknown_type"
   | typ -> str_typ typ
 
@@ -152,6 +158,10 @@ and print_expr fmt (_, _, expr) =
   | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
   | Earray_size ident ->
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
+  | Efun_init (idents, typ, body) ->
+    fprintf fmt {|fun(%a) : %a {@.@[<v 2>%a@]@.}|}
+      (pp_print_list ~pp_sep (print_ident ~typ_display:true))
+      idents print_typ typ print_block body
   | Eread -> fprintf fmt {|read_i32|}
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
@@ -180,6 +190,10 @@ and print_block fmt = function
   | Bexpr expr -> print_expr fmt expr
   | Bseq (expr, block) ->
     fprintf fmt {|%a;@.%a|} print_expr expr print_block block
+
+and print_block_typ fmt = function
+  | Bexpr (_loc, typ, _expr') -> print_typ fmt typ
+  | Bseq (_expr, block) -> print_block_typ fmt block
 
 let print_prog fmt block = fprintf fmt {|@[<v 2>%a@]@.|} print_block block
 

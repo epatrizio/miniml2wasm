@@ -189,6 +189,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
+  | Efun_init (_idents, _typ, _body) -> assert false
   | Eread ->
     (* WIP: 2 *)
     write_call buf 0;

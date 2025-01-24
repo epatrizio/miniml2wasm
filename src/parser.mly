@@ -1,5 +1,5 @@
-%token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
+%token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -70,6 +70,10 @@ let expr_bis :=
   | LBRACKET; ~ = separated_nonempty_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
+  | FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
+      match typ with
+      | Some typ -> Efun_init (idents, typ, body)
+      | None -> Efun_init (idents, Tunknown, body) }
   | READ_I32; { Eread }
   | ~ = stmt; <Estmt>
 

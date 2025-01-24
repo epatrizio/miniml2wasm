@@ -54,8 +54,9 @@ let get_blocktype = function
   | Tunit -> Empty
   | Tbool -> Valtyp Tbool
   | Ti32 -> Valtyp Ti32
-  | Tarray _ -> assert false
   | Tref _ -> assert false
+  | Tarray _ -> assert false
+  | Tfun _ -> assert false
   | Tunknown -> assert false
 
 let get_type_id_for_array = function
@@ -142,6 +143,7 @@ let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ ->
     Buffer.add_char buf '\x7f' (* memory pointer: i32 *)
   | Tunit | Tref _ | Tunknown -> ()
+  | Tfun _ -> assert false
 
 let write_valtype = write_numtype
 
@@ -166,6 +168,7 @@ let write_mut buf = function
   | Tunit | Tbool | Ti32 -> Buffer.add_char buf '\x00'
   | Tref _ -> Buffer.add_char buf '\x01'
   | Tarray _ -> assert false
+  | Tfun _ -> assert false
   | Tunknown -> assert false
 
 let write_blocktype buf = function

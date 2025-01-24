@@ -211,6 +211,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
+  | Efun_init (_idents, _typ, _body) -> assert false
   | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
