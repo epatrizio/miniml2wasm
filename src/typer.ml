@@ -211,7 +211,39 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
-  | Efun_init (_idents, _typ, _body) -> assert false
+  | Efun_init (idents, _typ, body) ->
+    List.fold_left
+      (fun _ (typ, _name) ->
+        if typ = Tunknown then
+          error loc
+            "Inference is not possible in function definition, all arguments \
+             must be typed!" )
+      () idents;
+    let args_typ, env =
+      List.fold_left
+        (fun (args_typ, env) (typ, name) ->
+          let env = Env.set_type name typ env in
+          (args_typ @ [ typ ], env) )
+        ([], env) idents
+    in
+    let* typ_body, body, env = typecheck_block body env in
+    begin
+      match (typ, typ_body) with
+      | typ, typ_body
+        when (typ_body = Tunit || typ_body = Tbool || typ_body = Ti32)
+             && (typ = Tunknown || typ = typ_body) ->
+        Ok
+          ( (loc, Tfun (args_typ, typ_body), Efun_init (idents, typ_body, body))
+          , env )
+      | typ, typ_body when typ != Tunknown && typ_body != typ ->
+        let msg =
+          Format.sprintf
+            {|function signature (return type) and body type are not uniform. %s expected!|}
+            (str_typ typ)
+        in
+        error loc msg
+      | _ -> assert false
+    end
   | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
