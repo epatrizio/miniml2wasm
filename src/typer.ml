@@ -95,18 +95,18 @@ and typecheck_binop_expr (loc, _typ, expr') env :
 
 and typecheck_var loc var env =
   match var with
-  | Vident (_typ, name) ->
-    let* typ = Env.get_type name env in
-    Ok ((typ, Vident (typ, name)), env)
-  | Varray ((_typ, name), expr) ->
-    let* typ = Env.get_type name env in
+  | Vident (_, ident_name) ->
+    let* typ = Env.get_type ident_name env in
+    Ok ((typ, Vident (typ, ident_name)), env)
+  | Varray ((_, ident_name), expr) ->
+    let* typ = Env.get_type ident_name env in
     begin
       match typ with
       | Tarray (typ, _) ->
         let* (l1, t1, expr'), env = typecheck_expr expr env in
         begin
           match t1 with
-          | Ti32 -> Ok ((typ, Varray ((typ, name), (l1, t1, expr'))), env)
+          | Ti32 -> Ok ((typ, Varray ((typ, ident_name), (l1, t1, expr'))), env)
           | _ ->
             error loc "attempt to perform an array access with a non i32 indice"
         end
@@ -171,11 +171,11 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
   | Eref expr ->
     let* (l, t, e'), env = typecheck_expr expr env in
     Ok ((loc, Tref t, Eref (l, t, e')), env)
-  | Ederef (_typ, name) ->
-    let* typ = Env.get_type name env in
+  | Ederef (_, ident_name) ->
+    let* typ = Env.get_type ident_name env in
     begin
       match typ with
-      | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, name)), env)
+      | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, ident_name)), env)
       | _ -> error loc "attempt to dereference a non reference type"
     end
   | Earray_init el ->
@@ -243,6 +243,35 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         in
         error loc msg
       | _ -> assert false
+    end
+  | Efun_call ((ident_typ, ident_name), el) ->
+    let* typ_ident = Env.get_type ident_name env in
+    begin
+      match typ_ident with
+      | Tfun (typ_l, typ_body) ->
+        ( if List.length typ_l != List.length el then
+            let msg =
+              Format.sprintf
+                {|function signature and function call are not uniform. %d argument(s) expected!|}
+                (List.length typ_l)
+            in
+            error loc msg );
+        let el, env =
+          List.fold_left2
+            (fun (el, env) typ_fun_arg exp_arg ->
+              let ret = typecheck_expr exp_arg env in
+              match ret with
+              | Ok ((loc, typ_exp, _exp'), env) when typ_fun_arg = typ_exp ->
+                (el @ [ (loc, typ_exp, _exp') ], env)
+              | _ ->
+                error loc
+                  "attempt to perform a function call with non uniform \
+                   argument types!" )
+            ([], env) typ_l el
+        in
+        Ok ((loc, typ_body, Efun_call ((ident_typ, ident_name), el)), env)
+      | _ ->
+        error loc "attempt to perform a function call on a non function var"
     end
   | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->

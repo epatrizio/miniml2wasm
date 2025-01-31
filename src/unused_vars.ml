@@ -94,6 +94,16 @@ and analyse_expr (_loc, _typ, expr') vars_use =
         vars_use idents
     in
     analyse_block body vars_use
+  | Efun_call ((_typ_ident, name), el) ->
+    let* vars_use = use_var name vars_use in
+    let vars_use =
+      List.fold_left
+        (fun vars_use expr ->
+          let ret = analyse_expr expr vars_use in
+          match ret with Ok vars_use -> vars_use | _ -> assert false )
+        vars_use el
+    in
+    Ok vars_use
   | Eread -> Ok vars_use
   | Estmt stmt -> analyse_stmt stmt vars_use
 
