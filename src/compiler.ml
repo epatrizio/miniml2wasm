@@ -429,31 +429,35 @@ let write_start_section buf =
   write_u32_of_int start_buf 0;
   write_section buf '\x08' start_buf
 
-let write_start_function buf prog env =
-  let i32_valtype_buf = Buffer.create 16 in
-  write_valtype i32_valtype_buf Ti32;
-  (* hard-coded: (0) functype start [][] - (1) print_i32 [i32][] - (2) read_i32 []][i32] *)
-  let functype_start_buf = encode_functype [] [] in
-  let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
-  let functype_read_i32_buf = encode_functype [] [ i32_valtype_buf ] in
-  let* code_buf, env = encode_prog prog env in
-  write_type_section buf
-    [ functype_start_buf; functype_print_i32_buf; functype_read_i32_buf ];
-  write_import_section buf;
-  write_function_section buf [ 0 ];
-  write_memory_section buf env;
-  write_global_section buf env;
-  write_start_section buf;
-  write_code_section buf [ code_buf ];
-  Ok (buf, env)
-
-let compile prog env =
+let encode_module prog env =
   let wasm_buf = Buffer.create 256 in
   (* magic *)
   Buffer.add_string wasm_buf "\x00\x61\x73\x6d";
   (* version *)
   Buffer.add_string wasm_buf "\x01\x00\x00\x00";
+
+  (* Must be refacto: https://github.com/epatrizio/miniml2wasm/issues/14 *)
+  (* let i32_valtype_buf = Buffer.create 16 in
+  write_valtype i32_valtype_buf Ti32; *)
+  (* let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
+  let functype_read_i32_buf = encode_functype [] [ i32_valtype_buf ] in *)
+  (* write_type_section wasm_buf
+    [ functype_start_buf; functype_print_i32_buf; functype_read_i32_buf ]; *)
+
+  (* hard-coded: (0) functype start [][] - (1) print_i32 [i32][] - (2) read_i32 []][i32] *)
+  let functype_start_buf = encode_functype [] [] in
   (* First basic approach: prog is fully compile in start function *)
-  let* wasm_buf, env = write_start_function wasm_buf prog env in
+  let* start_code_buf, env = encode_prog prog env in
+  write_type_section wasm_buf [ functype_start_buf ];
+  write_import_section wasm_buf;
+  write_function_section wasm_buf [ 0 ];
+  write_memory_section wasm_buf env;
+  write_global_section wasm_buf env;
+  write_start_section wasm_buf;
+  write_code_section wasm_buf [ start_code_buf ];
+  Ok (wasm_buf, env)
+
+let compile prog env =
+  let* wasm_buf, env = encode_module prog env in
   let wasm_str = Buffer.contents wasm_buf in
   Ok (wasm_str, env)
