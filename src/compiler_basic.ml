@@ -140,10 +140,10 @@ let write_call_indirect buf typeidx tableidx =
   write_u32_of_int buf tableidx
 
 let write_numtype buf = function
-  | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ ->
-    Buffer.add_char buf '\x7f' (* memory pointer: i32 *)
+  | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ | Tfun _ ->
+    (* memory pointer (array): i32 - global/local fun idx: i32 *)
+    Buffer.add_char buf '\x7f'
   | Tunit | Tref _ | Tunknown -> ()
-  | Tfun _ -> assert false
 
 let write_valtype = write_numtype
 

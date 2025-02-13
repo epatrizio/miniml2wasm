@@ -9,6 +9,7 @@ type ('a, 'b) t =
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
+  ; funs_wasm : (int * 'b * 'b) list
   }
 
 let counter n =
@@ -81,6 +82,10 @@ let add_local_wasm n typ env =
   let locals_wasm = env.locals_wasm @ [ (n, (local_wasm_idx, typ)) ] in
   { env with locals_wasm }
 
+let add_local_idx_wasm n idx typ env =
+  let locals_wasm = env.locals_wasm @ [ (n, (idx, typ)) ] in
+  { env with locals_wasm }
+
 let get_local_wasm_idx n env =
   match List.assoc_opt n env.locals_wasm with
   | Some (idx, _) -> Some idx
@@ -89,6 +94,30 @@ let get_local_wasm_idx n env =
 let get_locals_wasm_typs env =
   List.map (fun (_name, (_idx, typ)) -> typ) env.locals_wasm
 
+let get_fun_env env =
+  let types = env.types in
+  let memory = env.memory in
+  let globals = env.globals in
+  let locals = SMap.empty in
+  let globals_wasm = env.globals_wasm in
+  let locals_wasm = [] in
+  let funs_wasm = env.funs_wasm in
+  { types; memory; globals; locals; globals_wasm; locals_wasm; funs_wasm }
+
+(* start function: idx = 0 *)
+let fun_wasm_idx_counter = counter 0
+
+let add_fun_wasm data_typ data_body env =
+  let idx = fun_wasm_idx_counter () in
+  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, data_body) ] in
+  (idx, { env with funs_wasm })
+
+let get_funs_wasm_elts env =
+  List.fold_left
+    (fun (idxs, typs, codes) (idx, typ, code) ->
+      (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ]) )
+    ([], [], []) env.funs_wasm
+
 let empty () =
   let types = SMap.empty in
   let memory = Memory.init () in
@@ -96,4 +125,5 @@ let empty () =
   let locals = SMap.empty in
   let globals_wasm = [] in
   let locals_wasm = [] in
-  { types; memory; globals; locals; globals_wasm; locals_wasm }
+  let funs_wasm = [] in
+  { types; memory; globals; locals; globals_wasm; locals_wasm; funs_wasm }

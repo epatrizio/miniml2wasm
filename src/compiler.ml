@@ -170,6 +170,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
       compile_array_init buf env.memory.previous_pointer typ el stack_nb_elts
         env
     in
+    (* put memory array_pointer on stack for let local/global var *)
     write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
   | Earray (var, expr) ->
@@ -189,7 +190,31 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Efun_init (_idents, _typ, _body) -> assert false
+  | Efun_init (idents, typ, body) ->
+    let param_type_bufs =
+      List.fold_left
+        (fun param_types_buf (typ, _) ->
+          let valtype_buf = encode_valtype typ in
+          param_types_buf @ [ valtype_buf ] )
+        [] idents
+    in
+    let result_type_buf = encode_valtype typ in
+    let functype_buf = encode_functype param_type_bufs [ result_type_buf ] in
+    let func_env = Env.get_fun_env env in
+    let _, func_env =
+      List.fold_left
+        (fun (idx, env) (typ, name) ->
+          (idx + 1, Env.add_local_idx_wasm name idx typ env) )
+        (0, func_env) idents
+    in
+    let* func_code_buf, _func_env =
+      encode_prog body ~stack_drop:false func_env
+    in
+    let func_idx, env = Env.add_fun_wasm functype_buf func_code_buf env in
+    let func_idx = Int32.of_int func_idx in
+    (* put func_idx on stack for let local/global var *)
+    write_i32_const_u buf func_idx;
+    Ok (buf, stack_nb_elts + 1, env)
   | Efun_call (_ident, _el) -> assert false
   | Eread ->
     (* WIP: 2 *)
@@ -282,23 +307,7 @@ and compile_binop buf stack_nb_elts e1 binop e2 env =
   write_binop buf binop;
   Ok (buf, stack_nb_elts - 1, env)
 
-let encode_functype arg_resulttypes ret_resulttypes =
-  let buf = Buffer.create 16 in
-  Buffer.add_char buf '\x60';
-  write_vector buf arg_resulttypes;
-  write_vector buf ret_resulttypes;
-  buf
-
-let encode_empty_code () =
-  let buf = Buffer.create 16 in
-  write_u32_of_int buf 2;
-  (* locals *)
-  write_vector buf [];
-  (* explicit end opcode *)
-  Buffer.add_char buf '\x0b';
-  buf
-
-let encode_prog prog env =
+and encode_prog prog ?(stack_drop = true) env =
   let rec drop buf n =
     if n = 0 then ()
     else (
@@ -336,7 +345,7 @@ let encode_prog prog env =
   let locals_buf = Buffer.create 256 in
   let code_buf = Buffer.create 256 in
   let* code_buf, stack_nb_elts, env = compile_prog code_buf prog 0 env in
-  drop code_buf stack_nb_elts;
+  if stack_drop then drop code_buf stack_nb_elts;
   Buffer.add_char code_buf '\x0b';
   let locals_buf_list = get_locals env in
   write_vector locals_buf locals_buf_list;
@@ -346,6 +355,27 @@ let encode_prog prog env =
   Buffer.add_buffer buf locals_buf;
   Buffer.add_buffer buf code_buf;
   Ok (buf, env)
+
+and encode_valtype typ =
+  let valtype_buf = Buffer.create 16 in
+  write_valtype valtype_buf typ;
+  valtype_buf
+
+and encode_functype arg_resulttypes ret_resulttypes =
+  let buf = Buffer.create 16 in
+  Buffer.add_char buf '\x60';
+  write_vector buf arg_resulttypes;
+  write_vector buf ret_resulttypes;
+  buf
+
+let encode_empty_code () =
+  let buf = Buffer.create 16 in
+  write_u32_of_int buf 2;
+  (* locals *)
+  write_vector buf [];
+  (* explicit end opcode *)
+  Buffer.add_char buf '\x0b';
+  buf
 
 let write_type_section buf functypes =
   let type_buf = Buffer.create 16 in
@@ -448,13 +478,14 @@ let encode_module prog env =
   let functype_start_buf = encode_functype [] [] in
   (* First basic approach: prog is fully compile in start function *)
   let* start_code_buf, env = encode_prog prog env in
-  write_type_section wasm_buf [ functype_start_buf ];
+  let idxs, functype_bufs, code_bufs = Env.get_funs_wasm_elts env in
+  write_type_section wasm_buf (functype_start_buf :: functype_bufs);
   write_import_section wasm_buf;
-  write_function_section wasm_buf [ 0 ];
+  write_function_section wasm_buf (0 :: idxs);
   write_memory_section wasm_buf env;
   write_global_section wasm_buf env;
   write_start_section wasm_buf;
-  write_code_section wasm_buf [ start_code_buf ];
+  write_code_section wasm_buf (start_code_buf :: code_bufs);
   Ok (wasm_buf, env)
 
 let compile prog env =
