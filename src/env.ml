@@ -11,11 +11,17 @@ type ('a, 'b) t =
   ; locals_wasm : (string * (int * 'a)) list
   }
 
-let fresh =
-  let count = ref ~-1 in
+let counter n =
+  let from = ref n in
   fun () ->
-    incr count;
-    Format.sprintf "v%d" !count
+    incr from;
+    !from
+
+let fresh =
+  let counter = counter (-1) in
+  fun () ->
+    let count = counter () in
+    Format.sprintf "v%d" count
 
 let add_global n env =
   let fresh_name = fresh () in
@@ -51,11 +57,11 @@ let malloc_array typ env =
 
 let is_empty_memory env = Memory.is_empty env.memory
 
-let global_wasm_idx = ref 0
+let global_wasm_idx_counter = counter (-1)
 
 let add_global_wasm n data env =
-  let globals_wasm = env.globals_wasm @ [ (n, (!global_wasm_idx, data)) ] in
-  incr global_wasm_idx;
+  let global_wasm_idx = global_wasm_idx_counter () in
+  let globals_wasm = env.globals_wasm @ [ (n, (global_wasm_idx, data)) ] in
   { env with globals_wasm }
 
 let get_global_wasm_idx n env =
@@ -68,11 +74,11 @@ let get_globals_wasm_datas env =
 
 let is_empty_globals_wasm env = List.length env.globals_wasm = 0
 
-let local_wasm_idx = ref 0
+let local_wasm_idx_counter = counter (-1)
 
 let add_local_wasm n typ env =
-  let locals_wasm = env.locals_wasm @ [ (n, (!local_wasm_idx, typ)) ] in
-  incr local_wasm_idx;
+  let local_wasm_idx = local_wasm_idx_counter () in
+  let locals_wasm = env.locals_wasm @ [ (n, (local_wasm_idx, typ)) ] in
   { env with locals_wasm }
 
 let get_local_wasm_idx n env =
