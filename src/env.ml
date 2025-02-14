@@ -10,6 +10,7 @@ type ('a, 'b) t =
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
   ; funs_wasm : (int * 'b * 'b) list
+  ; funs_idx : int SMap.t
   }
 
 let counter n =
@@ -102,7 +103,16 @@ let get_fun_env env =
   let globals_wasm = env.globals_wasm in
   let locals_wasm = [] in
   let funs_wasm = env.funs_wasm in
-  { types; memory; globals; locals; globals_wasm; locals_wasm; funs_wasm }
+  let funs_idx = SMap.empty in
+  { types
+  ; memory
+  ; globals
+  ; locals
+  ; globals_wasm
+  ; locals_wasm
+  ; funs_wasm
+  ; funs_idx
+  }
 
 (* start function: idx = 0 *)
 let fun_wasm_idx_counter = counter 0
@@ -118,6 +128,17 @@ let get_funs_wasm_elts env =
       (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ]) )
     ([], [], []) env.funs_wasm
 
+let add_fun_idx n env =
+  (* Warninig: must be called after add_fun_wasm *)
+  let idx = List.length env.funs_wasm in
+  let funs_idx = SMap.add n idx env.funs_idx in
+  { env with funs_idx }
+
+let get_fun_idx n env =
+  match SMap.find_opt n env.funs_idx with
+  | Some idx -> Ok idx
+  | None -> Error (Format.sprintf "func ident: %s not found in env.funs_idx" n)
+
 let empty () =
   let types = SMap.empty in
   let memory = Memory.init () in
@@ -126,4 +147,13 @@ let empty () =
   let globals_wasm = [] in
   let locals_wasm = [] in
   let funs_wasm = [] in
-  { types; memory; globals; locals; globals_wasm; locals_wasm; funs_wasm }
+  let funs_idx = SMap.empty in
+  { types
+  ; memory
+  ; globals
+  ; locals
+  ; globals_wasm
+  ; locals_wasm
+  ; funs_wasm
+  ; funs_idx
+  }

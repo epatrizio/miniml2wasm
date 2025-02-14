@@ -151,6 +151,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let env = Env.add_local_wasm name typ env in
     let idx = get_local_idx loc name env in
     let* e1_buf, stack_nb_elts, env = compile_expr e1 stack_nb_elts env in
+    let env = match typ with Tfun _ -> Env.add_fun_idx name env | _ -> env in
     let* e2_buf, stack_nb_elts, env = compile_expr e2 stack_nb_elts env in
     Buffer.add_buffer buf e1_buf;
     Buffer.add_char buf '\x21';
@@ -215,7 +216,23 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put func_idx on stack for let local/global var *)
     write_i32_const_u buf func_idx;
     Ok (buf, stack_nb_elts + 1, env)
-  | Efun_call (_ident, _el) -> assert false
+  | Efun_call ((_typ, name), el) ->
+    let* typ = Env.get_type name env in
+    let stack_nb_elts, env =
+      List.fold_left
+        (fun (stack_nb_elts, env) expr ->
+          let ret = compile_expr expr stack_nb_elts env in
+          match ret with
+          | Ok (expr_buf, stack_nb_elts, env) ->
+            Buffer.add_buffer buf expr_buf;
+            (stack_nb_elts, env)
+          | Error _ -> assert false )
+        (stack_nb_elts, env) el
+    in
+    let* funcidx = Env.get_fun_idx name env in
+    let stack_nb_elts = stack_nb_elts + get_stack_nb_elts_evol_after_call typ in
+    write_call buf funcidx;
+    Ok (buf, stack_nb_elts, env)
   | Eread ->
     (* WIP: 2 *)
     write_call buf 0;

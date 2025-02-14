@@ -66,6 +66,12 @@ let get_type_id_for_array = function
   | Tarray (Tbool, _) -> 3l
   | _ -> assert false
 
+let get_stack_nb_elts_evol_after_call = function
+  | Tfun (arg_typs, ret_typ) ->
+    let arg_pop = -List.length arg_typs in
+    if ret_typ = Tunit then arg_pop else arg_pop + 1
+  | _ -> assert false
+
 (* add byte from int (ascii code) *)
 let write_byte buf i =
   let c = Char.chr (i land 0xff) in
