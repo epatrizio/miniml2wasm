@@ -216,8 +216,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put func_idx on stack for let local/global var *)
     write_i32_const_u buf func_idx;
     Ok (buf, stack_nb_elts + 1, env)
-  | Efun_call ((_typ, name), el) ->
-    let* typ = Env.get_type name env in
+  | Efun_call ((typ, name), el) ->
     let stack_nb_elts, env =
       List.fold_left
         (fun (stack_nb_elts, env) expr ->

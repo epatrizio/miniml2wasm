@@ -203,11 +203,11 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     let* (typ, var), env = typecheck_var loc var env in
     let* expr, env = typecheck_expr expr env in
     Ok ((loc, typ, Earray (var, expr)), env)
-  | Earray_size (_, ident_name) as stmt ->
+  | Earray_size (_, ident_name) ->
     let* ident_typ = Env.get_type ident_name env in
     begin
       match ident_typ with
-      | Tarray _ -> Ok ((loc, Ti32, stmt), env)
+      | Tarray _ -> Ok ((loc, Ti32, Earray_size (ident_typ, ident_name)), env)
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
@@ -244,10 +244,10 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc msg
       | _ -> assert false
     end
-  | Efun_call ((ident_typ, ident_name), el) ->
-    let* typ_ident = Env.get_type ident_name env in
+  | Efun_call ((_ident_typ, ident_name), el) ->
+    let* ident_typ = Env.get_type ident_name env in
     begin
-      match typ_ident with
+      match ident_typ with
       | Tfun (typ_l, typ_body) ->
         ( if List.length typ_l != List.length el then
             let msg =
@@ -302,12 +302,12 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
     end
-  | Srefassign ((_, ident_name), expr) as stmt ->
+  | Srefassign ((_, ident_name), expr) ->
     let* ident_typ = Env.get_type ident_name env in
     let* (_, typ_e, _), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
-      | Tref typ, typ_e when typ = typ_e -> Ok ((loc, stmt), env)
+      | Tref typ, typ_e when typ = typ_e -> Ok ((loc, Srefassign ((ident_typ, ident_name), expr)), env)
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
