@@ -90,6 +90,7 @@ let rec str_typ = function
   | Ti32 -> "i32"
   | Tarray (typ, i) -> sprintf {|%s[%d]|} (str_typ typ) (Int32.to_int i)
   | Tfun (arg_typs, ret_typ) ->
+    let arg_typs = if List.length arg_typs = 0 then [ Tunit ] else arg_typs in
     let typs = arg_typs @ [ ret_typ ] in
     let typs = List.map str_typ typs in
     String.concat " -> " typs

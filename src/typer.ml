@@ -307,7 +307,8 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
     let* (_, typ_e, _), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
-      | Tref typ, typ_e when typ = typ_e -> Ok ((loc, Srefassign ((ident_typ, ident_name), expr)), env)
+      | Tref typ, typ_e when typ = typ_e ->
+        Ok ((loc, Srefassign ((ident_typ, ident_name), expr)), env)
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
