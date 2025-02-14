@@ -171,10 +171,9 @@ let write_binop buf = function
   | Bge -> Buffer.add_char buf '\x4e'
 
 let write_mut buf = function
-  | Tunit | Tbool | Ti32 -> Buffer.add_char buf '\x00'
+  | Tunit | Tbool | Ti32 | Tfun _ -> Buffer.add_char buf '\x00'
   | Tref _ -> Buffer.add_char buf '\x01'
   | Tarray _ -> assert false
-  | Tfun _ -> assert false
   | Tunknown -> assert false
 
 let write_blocktype buf = function

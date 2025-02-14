@@ -239,6 +239,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
+    let env = match typ with Tfun _ -> Env.add_fun_idx name env | _ -> env in
     Buffer.add_char expr_buf '\x0b';
     write_globaltype global_buf typ;
     Buffer.add_buffer global_buf expr_buf;
