@@ -1,0 +1,25 @@
+(* Fibonacci implementations *)
+
+(* Polynomial algorithm *)
+let fibo = fun(n : i32) : i32 {
+  assert (n >= 0);
+  let cnt = ref 1 in
+  let a = ref 0 in
+  let b = ref 1 in
+  let tmp = ref 0 in
+  begin
+    while !cnt <= n do
+      tmp := !a;
+      a := !b;
+      b := !tmp + !b;
+      cnt := !cnt + 1
+    done;
+    !a
+  end
+};
+
+assert (fibo(15) == 610)
+
+(* TODO: Naive recursive version *)
+(* TODO: Recursive version with memoization *)
+(* TODO: Tail recursive *)

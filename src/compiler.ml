@@ -202,11 +202,10 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let result_type_buf = encode_valtype typ in
     let functype_buf = encode_functype param_type_bufs [ result_type_buf ] in
     let func_env = Env.get_fun_env env in
-    let _, func_env =
+    let func_env =
       List.fold_left
-        (fun (idx, env) (typ, name) ->
-          (idx + 1, Env.add_local_idx_wasm name idx typ env) )
-        (0, func_env) idents
+        (fun env (typ, name) -> Env.add_local_wasm name typ env)
+        func_env idents
     in
     let* func_code_buf, _func_env =
       encode_prog body ~stack_drop:false func_env

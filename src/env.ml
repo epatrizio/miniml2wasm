@@ -9,6 +9,7 @@ type ('a, 'b) t =
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
+  ; local_wasm_idx_counter : unit -> int
   ; funs_wasm : (int * 'b * 'b) list
   ; funs_idx : int SMap.t
   }
@@ -76,15 +77,9 @@ let get_globals_wasm_datas env =
 
 let is_empty_globals_wasm env = List.length env.globals_wasm = 0
 
-let local_wasm_idx_counter = counter (-1)
-
 let add_local_wasm n typ env =
-  let local_wasm_idx = local_wasm_idx_counter () in
+  let local_wasm_idx = env.local_wasm_idx_counter () in
   let locals_wasm = env.locals_wasm @ [ (n, (local_wasm_idx, typ)) ] in
-  { env with locals_wasm }
-
-let add_local_idx_wasm n idx typ env =
-  let locals_wasm = env.locals_wasm @ [ (n, (idx, typ)) ] in
   { env with locals_wasm }
 
 let get_local_wasm_idx n env =
@@ -102,6 +97,7 @@ let get_fun_env env =
   let locals = SMap.empty in
   let globals_wasm = env.globals_wasm in
   let locals_wasm = [] in
+  let local_wasm_idx_counter = counter (-1) in
   let funs_wasm = env.funs_wasm in
   let funs_idx = SMap.empty in
   { types
@@ -110,6 +106,7 @@ let get_fun_env env =
   ; locals
   ; globals_wasm
   ; locals_wasm
+  ; local_wasm_idx_counter
   ; funs_wasm
   ; funs_idx
   }
@@ -146,6 +143,7 @@ let empty () =
   let locals = SMap.empty in
   let globals_wasm = [] in
   let locals_wasm = [] in
+  let local_wasm_idx_counter = counter (-1) in
   let funs_wasm = [] in
   let funs_idx = SMap.empty in
   { types
@@ -154,6 +152,7 @@ let empty () =
   ; locals
   ; globals_wasm
   ; locals_wasm
+  ; local_wasm_idx_counter
   ; funs_wasm
   ; funs_idx
   }
