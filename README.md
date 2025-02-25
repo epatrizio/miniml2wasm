@@ -49,6 +49,13 @@ let x = 40;
 (* let arr : bool[2] = [true,true]; *)
 (* array are not supported in a global context *)
 
+(* function can be global and local *)
+(* return type can be inferred, argument type not! *)
+(*   > more details about typing in the following documentation *)
+let identity = fun(x : i32) (*: i32*) {
+  x
+};
+
 (* local scope *)
 
 (* var is immutable by default *)
@@ -67,19 +74,20 @@ let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
     assert true;
     while true do (* loop-cond must be in bool type *)
       (* mutable var assign *)
-      z := 42;
+      (* primitive function: array_size *)
+      z := array_size array;
       (* array col assign *)
       array[0] := false;
       (* if-cond must be in bool type *)
       (* imported function: print_i32 *)
-      if not true then print_i32 42
-      else print_i32 -42;
-      (* primitive function: array_size *)
-      array_size array
+      (* !z : dereference z var *)
+      if not true then print_i32 !z
+      else print_i32 -(!z)
     done;
     (* unary opertations: - not *)
     (* binary opertations: + - * / == != < <= > => *)
-    (x + y)
+    (* function call *)
+    identity(x + y)
   end
 ```
 
@@ -95,6 +103,16 @@ compilation target file _wasm/fact.wasm: done!
 ```
 
 See [test suite files](https://github.com/epatrizio/miniml2wasm/tree/main/test/) for examples of all language elements.
+
+### Type system focus
+
+This implementation of `miniml` has a strong static typing but is not really [inferred](https://en.wikipedia.org/wiki/Type_inference).
+Variables and expressions can be inferred. But not function arguments, whose types must be specified
+([polymorphism](https://en.wikipedia.org/wiki/Parametric_polymorphism)). The idea would be to implement a type system like
+[Hindley–Milner](https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system), but it's complicated at this moment!
+
+Like the very interesting [AssemblyScript](https://www.assemblyscript.org) language,
+we're offering here a less powerful, sometimes limited, but sufficient and highly oriented type system to target WebAssembly.
 
 ## WebAssembly tools
 
