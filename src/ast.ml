@@ -168,7 +168,7 @@ and print_expr fmt (_, _, expr) =
   | Efun_import_init typ -> begin
     match typ with
     | Tfun (typs, typ) ->
-      fprintf fmt {|import "mod" fun(%a) : %a;|}
+      fprintf fmt {|import fun(%a) : %a|}
         (pp_print_list ~pp_sep print_typ)
         typs print_typ typ
     | _ -> assert false

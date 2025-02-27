@@ -244,7 +244,20 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc msg
       | _ -> assert false
     end
-  | Efun_import_init _typ -> assert false
+  | Efun_import_init fun_typ as fun_import -> begin
+    match fun_typ with
+    | Tfun (_typs, Tunknown) ->
+      error loc "return type of an import function must be specified"
+    | Tfun (typs, _typ) as fun_typ ->
+      List.iter
+        (fun typ ->
+          if typ = Tunknown then
+            error loc "arguments types of an import function must be specified"
+          else () )
+        typs;
+      Ok ((loc, fun_typ, fun_import), env)
+    | _ -> error loc "attempt to perform an import on a non function type"
+  end
   | Efun_call ((_ident_typ, ident_name), el) ->
     let* ident_typ = Env.get_type ident_name env in
     begin

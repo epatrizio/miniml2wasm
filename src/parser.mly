@@ -74,10 +74,8 @@ let expr_bis :=
       match typ with
       | Some typ -> Efun_init (idents, typ, body)
       | None -> Efun_init (idents, Tunknown, body) }
-
   | IMPORT; FUN; typs = delimited(LPAREN, separated_list(COMMA, typ), RPAREN); typ = preceded(COLON, typ); {
       Efun_import_init (Tfun (typs, typ)) }
-
   | ~ = ident; ~ = delimited(LPAREN, separated_list(COMMA, expr), RPAREN); <Efun_call>
   | READ_I32; { Eread }
   | ~ = stmt; <Estmt>
