@@ -9,13 +9,22 @@ type ('a, 'b) t =
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
+  ; local_wasm_idx_counter : unit -> int
+  ; funs_wasm : (int * 'b * 'b) list
+  ; funs_idx : int SMap.t
   }
 
-let fresh =
-  let count = ref ~-1 in
+let counter n =
+  let from = ref n in
   fun () ->
-    incr count;
-    Format.sprintf "v%d" !count
+    incr from;
+    !from
+
+let fresh =
+  let counter = counter (-1) in
+  fun () ->
+    let count = counter () in
+    Format.sprintf "v%d" count
 
 let add_global n env =
   let fresh_name = fresh () in
@@ -51,11 +60,11 @@ let malloc_array typ env =
 
 let is_empty_memory env = Memory.is_empty env.memory
 
-let global_wasm_idx = ref 0
+let global_wasm_idx_counter = counter (-1)
 
 let add_global_wasm n data env =
-  let globals_wasm = env.globals_wasm @ [ (n, (!global_wasm_idx, data)) ] in
-  incr global_wasm_idx;
+  let global_wasm_idx = global_wasm_idx_counter () in
+  let globals_wasm = env.globals_wasm @ [ (n, (global_wasm_idx, data)) ] in
   { env with globals_wasm }
 
 let get_global_wasm_idx n env =
@@ -68,11 +77,9 @@ let get_globals_wasm_datas env =
 
 let is_empty_globals_wasm env = List.length env.globals_wasm = 0
 
-let local_wasm_idx = ref 0
-
 let add_local_wasm n typ env =
-  let locals_wasm = env.locals_wasm @ [ (n, (!local_wasm_idx, typ)) ] in
-  incr local_wasm_idx;
+  let local_wasm_idx = env.local_wasm_idx_counter () in
+  let locals_wasm = env.locals_wasm @ [ (n, (local_wasm_idx, typ)) ] in
   { env with locals_wasm }
 
 let get_local_wasm_idx n env =
@@ -83,6 +90,52 @@ let get_local_wasm_idx n env =
 let get_locals_wasm_typs env =
   List.map (fun (_name, (_idx, typ)) -> typ) env.locals_wasm
 
+let get_fun_env env =
+  let types = env.types in
+  let memory = env.memory in
+  let globals = env.globals in
+  let locals = SMap.empty in
+  let globals_wasm = env.globals_wasm in
+  let locals_wasm = [] in
+  let local_wasm_idx_counter = counter (-1) in
+  let funs_wasm = env.funs_wasm in
+  let funs_idx = SMap.empty in
+  { types
+  ; memory
+  ; globals
+  ; locals
+  ; globals_wasm
+  ; locals_wasm
+  ; local_wasm_idx_counter
+  ; funs_wasm
+  ; funs_idx
+  }
+
+(* start function: idx = 0 *)
+let fun_wasm_idx_counter = counter 0
+
+let add_fun_wasm data_typ data_body env =
+  let idx = fun_wasm_idx_counter () in
+  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, data_body) ] in
+  (idx, { env with funs_wasm })
+
+let get_funs_wasm_elts env =
+  List.fold_left
+    (fun (idxs, typs, codes) (idx, typ, code) ->
+      (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ]) )
+    ([], [], []) env.funs_wasm
+
+let add_fun_idx n env =
+  (* Warninig: must be called after add_fun_wasm *)
+  let idx = List.length env.funs_wasm in
+  let funs_idx = SMap.add n idx env.funs_idx in
+  { env with funs_idx }
+
+let get_fun_idx n env =
+  match SMap.find_opt n env.funs_idx with
+  | Some idx -> Ok idx
+  | None -> Error (Format.sprintf "func ident: %s not found in env.funs_idx" n)
+
 let empty () =
   let types = SMap.empty in
   let memory = Memory.init () in
@@ -90,4 +143,16 @@ let empty () =
   let locals = SMap.empty in
   let globals_wasm = [] in
   let locals_wasm = [] in
-  { types; memory; globals; locals; globals_wasm; locals_wasm }
+  let local_wasm_idx_counter = counter (-1) in
+  let funs_wasm = [] in
+  let funs_idx = SMap.empty in
+  { types
+  ; memory
+  ; globals
+  ; locals
+  ; globals_wasm
+  ; locals_wasm
+  ; local_wasm_idx_counter
+  ; funs_wasm
+  ; funs_idx
+  }

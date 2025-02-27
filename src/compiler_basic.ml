@@ -54,8 +54,9 @@ let get_blocktype = function
   | Tunit -> Empty
   | Tbool -> Valtyp Tbool
   | Ti32 -> Valtyp Ti32
-  | Tarray _ -> assert false
   | Tref _ -> assert false
+  | Tarray _ -> assert false
+  | Tfun _ -> assert false
   | Tunknown -> assert false
 
 let get_type_id_for_array = function
@@ -63,6 +64,12 @@ let get_type_id_for_array = function
   | Tbool -> 1l
   | Tarray (Ti32, _) -> 2l
   | Tarray (Tbool, _) -> 3l
+  | _ -> assert false
+
+let get_stack_nb_elts_evol_after_call = function
+  | Tfun (arg_typs, ret_typ) ->
+    let arg_pop = -List.length arg_typs in
+    if ret_typ = Tunit then arg_pop else arg_pop + 1
   | _ -> assert false
 
 (* add byte from int (ascii code) *)
@@ -139,8 +146,9 @@ let write_call_indirect buf typeidx tableidx =
   write_u32_of_int buf tableidx
 
 let write_numtype buf = function
-  | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ ->
-    Buffer.add_char buf '\x7f' (* memory pointer: i32 *)
+  | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ | Tfun _ ->
+    (* memory pointer (array): i32 - global/local fun idx: i32 *)
+    Buffer.add_char buf '\x7f'
   | Tunit | Tref _ | Tunknown -> ()
 
 let write_valtype = write_numtype
@@ -163,7 +171,7 @@ let write_binop buf = function
   | Bge -> Buffer.add_char buf '\x4e'
 
 let write_mut buf = function
-  | Tunit | Tbool | Ti32 -> Buffer.add_char buf '\x00'
+  | Tunit | Tbool | Ti32 | Tfun _ -> Buffer.add_char buf '\x00'
   | Tref _ -> Buffer.add_char buf '\x01'
   | Tarray _ -> assert false
   | Tunknown -> assert false

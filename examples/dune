@@ -1,6 +1,7 @@
 (cram
  (deps
   fact.mml
+  fibo.mml
   print.wat
   print.js
   (glob_files _wasm/*)))

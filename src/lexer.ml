@@ -46,6 +46,8 @@ let rec token buf =
   | ')' -> RPAREN
   | '[' -> LBRACKET
   | ']' -> RBRACKET
+  | '{' -> LBRACE
+  | '}' -> RBRACE
   | ',' -> COMMA
   | ';' -> SEMICOLON
   | ':' -> COLON
@@ -61,6 +63,7 @@ let rec token buf =
   | "do" -> DO
   | "done" -> DONE
   | "ref" -> REF
+  | "fun" -> FUN
   | "&&" -> AND
   | "||" -> OR
   | "not" -> NOT

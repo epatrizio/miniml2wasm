@@ -4,6 +4,7 @@
   array.mml
   assert.mml
   block.mml
+  func.mml
   if.mml
   matrix.mml
   unused_vars.mml

@@ -1,4 +1,21 @@
-(* factorial 6 computation *)
+(* Factorial implementations *)
+
+let fun_fact = fun(n : i32) : i32 {
+  assert (n >= 0);
+  let cnt = ref 1 in
+  let f = ref 1 in
+  begin
+    while !cnt <= n do
+      f := !f * !cnt;
+      cnt := !cnt + 1
+    done;
+    !f
+  end
+};
+
+(* TODO: Recursive version *)
+
+(* factorial 6 direct computation *)
 let fact : i32 ref = ref 0;
 let n : i32 ref = ref 6 in
   begin
@@ -9,4 +26,5 @@ let n : i32 ref = ref 6 in
       fact := !fact * !n
     done
   end;
-!fact   (* 720 *)
+
+assert (fun_fact(6) == !fact)

@@ -1,0 +1,9 @@
+let double = fun(a : i32) { a * 2 };
+let triple = fun(a : i32) { a * 3 };
+
+let x = 10 in
+let identity = fun(a : i32) : i32 { a } in
+let y = 4 in
+let div2 = fun(a : i32) { a / 2 } in
+  identity(double(triple(div2(x+y))))
+  (* 42 = (((10 + 4) / 2) * 3) * 2 *)
