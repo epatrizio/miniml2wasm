@@ -27,6 +27,7 @@
   fun_6.mml
   fun_7.mml
   global_binop.mml
+  import.mml
   local_binop.mml
   local_if.mml
   local_unop.mml

@@ -64,6 +64,7 @@ let rec token buf =
   | "done" -> DONE
   | "ref" -> REF
   | "fun" -> FUN
+  | "import" -> IMPORT
   | "&&" -> AND
   | "||" -> OR
   | "not" -> NOT

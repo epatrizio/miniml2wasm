@@ -1,5 +1,5 @@
 %token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -74,6 +74,10 @@ let expr_bis :=
       match typ with
       | Some typ -> Efun_init (idents, typ, body)
       | None -> Efun_init (idents, Tunknown, body) }
+
+  | IMPORT; FUN; typs = delimited(LPAREN, separated_list(COMMA, typ), RPAREN); typ = preceded(COLON, typ); {
+      Efun_import_init (Tfun (typs, typ)) }
+
   | ~ = ident; ~ = delimited(LPAREN, separated_list(COMMA, expr), RPAREN); <Efun_call>
   | READ_I32; { Eread }
   | ~ = stmt; <Estmt>
