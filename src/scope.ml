@@ -75,6 +75,7 @@ and analyse_expr (loc, typ, expr') env =
     in
     let* body, _env_local = analyse_block body env_local in
     Ok ((loc, typ, Efun_init (fresh_idents, typ, body)), env)
+  | Efun_import_init typ as fun_import -> Ok ((loc, typ, fun_import), env)
   | Efun_call ((typ_ident, name), el) ->
     let* name = Env.get_name name env in
     let el, env =

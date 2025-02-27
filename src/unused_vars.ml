@@ -94,6 +94,7 @@ and analyse_expr (_loc, _typ, expr') vars_use =
         vars_use idents
     in
     analyse_block body vars_use
+  | Efun_import_init _typ -> Ok vars_use
   | Efun_call ((_typ_ident, name), el) ->
     let* vars_use = use_var name vars_use in
     let vars_use =

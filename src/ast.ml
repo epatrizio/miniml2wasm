@@ -56,6 +56,7 @@ and expr' =
   | Earray of var * expr
   | Earray_size of ident
   | Efun_init of ident list * typ * block
+  | Efun_import_init of typ
   | Efun_call of ident * expr list
   | Eread
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
@@ -164,6 +165,14 @@ and print_expr fmt (_, _, expr) =
     fprintf fmt {|fun(%a) : %a {@.@[<v 2>%a@]@.}|}
       (pp_print_list ~pp_sep (print_ident ~typ_display:true))
       idents print_typ typ print_block body
+  | Efun_import_init typ -> begin
+    match typ with
+    | Tfun (typs, typ) ->
+      fprintf fmt {|import "mod" fun(%a) : %a;|}
+        (pp_print_list ~pp_sep print_typ)
+        typs print_typ typ
+    | _ -> assert false
+  end
   | Efun_call (ident, el) ->
     fprintf fmt "%a(%a)"
       (print_ident ~typ_display:false)

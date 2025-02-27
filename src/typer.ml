@@ -244,6 +244,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc msg
       | _ -> assert false
     end
+  | Efun_import_init _typ -> assert false
   | Efun_call ((_ident_typ, ident_name), el) ->
     let* ident_typ = Env.get_type ident_name env in
     begin
