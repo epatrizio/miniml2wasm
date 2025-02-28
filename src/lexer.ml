@@ -42,6 +42,7 @@ let rec token buf =
   | ">=" -> GE
   | '=' -> EQ
   | ":=" -> REFEQ
+  | "->" -> ARROW
   | '(' -> LPAREN
   | ')' -> RPAREN
   | '[' -> LBRACKET

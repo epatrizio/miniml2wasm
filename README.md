@@ -52,7 +52,7 @@ let x = 40;
 (* function can be global and local *)
 (* return type can be inferred, argument type not! *)
 (*   > more details about typing in the following documentation *)
-let identity = fun(x : i32) (*: i32*) {
+let identity (*: i32 -> i32*) = fun(x : i32) (*: i32*) {
   x
 };
 

@@ -1,5 +1,5 @@
 %token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT ARROW EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -115,5 +115,11 @@ let typ :=
       match cst with
       | Ci32 i32 -> Tarray (typ, i32)
       | _ -> assert false }
+  | args_typ = typ; ARROW; return_typ = typ; {
+      match args_typ with
+      | Tunit | Tbool | Ti32 | Tarray _ -> Tfun ([ args_typ ], return_typ)
+      | Tfun (args_t, ret_t) -> Tfun (args_t @ [ ret_t ], return_typ)
+      | _ -> assert false
+  }
 
 %%
