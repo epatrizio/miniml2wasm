@@ -117,7 +117,8 @@ let typ :=
       | _ -> assert false }
   | args_typ = typ; ARROW; return_typ = typ; {
       match args_typ with
-      | Tunit | Tbool | Ti32 | Tarray _ -> Tfun ([ args_typ ], return_typ)
+      | Tunit -> Tfun ([], return_typ)
+      | Tbool | Ti32 | Tarray _ -> Tfun ([ args_typ ], return_typ)
       | Tfun (args_t, ret_t) -> Tfun (args_t @ [ ret_t ], return_typ)
       | _ -> assert false
   }
