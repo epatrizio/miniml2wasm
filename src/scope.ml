@@ -103,9 +103,17 @@ and analyse_block block env =
 and analyse_stmt (loc, stmt') env =
   match stmt' with
   | Slet ((typ_ident, name), expr) ->
-    let* expr, env = analyse_expr expr env in
-    let fresh_name, env = Env.add_global name env in
-    Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+    let _, _, expr' = expr in
+    begin
+      match expr' with
+      | Efun_import_init _ ->
+        let env = Env.add_global_without_fresh_name name env in
+        Ok ((loc, Slet ((typ_ident, name), expr)), env)
+      | _ ->
+        let* expr, env = analyse_expr expr env in
+        let fresh_name, env = Env.add_global name env in
+        Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+    end
   | Srefassign ((typ_ident, name), expr) ->
     let* expr, env = analyse_expr expr env in
     let* name = Env.get_name name env in

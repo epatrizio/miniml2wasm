@@ -31,6 +31,10 @@ let add_global n env =
   let globals = SMap.add n fresh_name env.globals in
   (fresh_name, { env with globals })
 
+let add_global_without_fresh_name n env =
+  let globals = SMap.add n n env.globals in
+  { env with globals }
+
 let add_local n env =
   let fresh_name = fresh () in
   let locals = SMap.add n fresh_name env.locals in
