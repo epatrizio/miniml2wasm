@@ -1,2 +1,2 @@
-let identity : i32 -> i32 = fun( ) : i32 { 42 } in
-42
+let empty : unit -> i32 = fun( ) : unit { () } in
+()
