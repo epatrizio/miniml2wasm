@@ -155,6 +155,13 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc "attempt to perform a non boolean if expression condition"
     end
   | Elet ((ident_typ, ident_name), e1, e2) ->
+    let _, _, e1' = e1 in
+    begin
+      match e1' with
+      | Efun_import_init _ ->
+        error loc "local scope import functions are not allowed"
+      | _ -> ()
+    end;
     let* (loc_e1, typ_e1, e1'), env = typecheck_expr e1 env in
     begin
       match (ident_typ, typ_e1) with
