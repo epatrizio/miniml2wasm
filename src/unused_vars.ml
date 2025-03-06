@@ -105,7 +105,6 @@ and analyse_expr (_loc, _typ, expr') vars_use =
         vars_use el
     in
     Ok vars_use
-  | Eread -> Ok vars_use
   | Estmt stmt -> analyse_stmt stmt vars_use
 
 and analyse_block block vars_use =
@@ -131,7 +130,6 @@ and analyse_stmt (_loc, stmt') vars_use =
     let* vars_use = analyse_expr expr vars_use in
     analyse_block block vars_use
   | Sassert expr -> analyse_expr expr vars_use
-  | Sprint expr -> analyse_expr expr vars_use
   | Sunreachable -> Ok vars_use
   | Snop -> Ok vars_use
 

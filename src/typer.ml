@@ -287,7 +287,6 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform a function call on a non function var"
     end
-  | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -376,17 +375,6 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       let message =
         Format.sprintf
           {|attempt to perform an assert call on a non boolean value (%s)|}
-          (str_typ typ)
-      in
-      error loc message )
-  | Sprint expr -> (
-    let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
-    match typ_e with
-    | Ti32 -> Ok ((loc, Sprint (loc_e, typ_e, expr')), env)
-    | typ ->
-      let message =
-        Format.sprintf
-          {|attempt to perform a print_i32 call on a non i32 value (%s)|}
           (str_typ typ)
       in
       error loc message )

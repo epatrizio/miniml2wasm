@@ -86,7 +86,6 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Efun_call ((typ_ident, name), el)), env)
-  | Eread -> Ok ((loc, typ, Eread), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)
@@ -123,9 +122,6 @@ and analyse_stmt (loc, stmt') env =
   | Sassert expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sassert expr), env)
-  | Sprint expr ->
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, Sprint expr), env)
   | Sunreachable -> Ok ((loc, Sunreachable), env)
   | Snop -> Ok ((loc, Snop), env)
 

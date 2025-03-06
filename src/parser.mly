@@ -1,14 +1,12 @@
 %token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT ARROW EOF ASSERT PRINT_I32 READ_I32 ARRAY_SIZE
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT ARROW EOF ASSERT ARRAY_SIZE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
 
 // %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
 
-(* tmp (ASSERT _ PRINT_I32 tokens): it should be a func call ? *)
 %nonassoc ASSERT
-%nonassoc PRINT_I32
 
 %right OR
 %right AND
@@ -44,7 +42,6 @@ let stmt_bis :=
   | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
-  | PRINT_I32; ~ = expr; <Sprint>
 
 let stmt :=
   | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
@@ -77,7 +74,6 @@ let expr_bis :=
   | IMPORT; FUN; typs = delimited(LPAREN, separated_list(COMMA, typ), RPAREN); typ = preceded(COLON, typ); {
       Efun_import_init (Tfun (typs, typ)) }
   | ~ = ident; ~ = delimited(LPAREN, separated_list(COMMA, expr), RPAREN); <Efun_call>
-  | READ_I32; { Eread }
   | ~ = stmt; <Estmt>
 
 let expr :=
