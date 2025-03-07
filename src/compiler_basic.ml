@@ -21,6 +21,10 @@ type limits =
 
 exception Compiling_error of string
 
+let string_to_ascii str =
+  let chars = List.init (String.length str) (String.get str) in
+  List.map Char.code chars
+
 let error loc message =
   let message = Format.sprintf {|%s: %s|} (str_loc loc) message in
   raise (Compiling_error message)

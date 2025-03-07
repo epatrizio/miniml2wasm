@@ -2,6 +2,12 @@
 
 module SMap = Map.Make (String)
 
+module IMap = Map.Make (struct
+  type t = int
+
+  let compare = compare
+end)
+
 type ('a, 'b) t =
   { types : 'a SMap.t
   ; memory : Memory.t
@@ -10,8 +16,9 @@ type ('a, 'b) t =
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
   ; local_wasm_idx_counter : unit -> int
-  ; funs_wasm : (int * 'b * 'b) list
+  ; funs_wasm : (int * 'b * 'b option) list
   ; funs_idx : int SMap.t
+  ; funs_name : string IMap.t
   }
 
 let counter n =
@@ -104,6 +111,7 @@ let get_fun_env env =
   let local_wasm_idx_counter = counter (-1) in
   let funs_wasm = env.funs_wasm in
   let funs_idx = SMap.empty in
+  let funs_name = IMap.empty in
   { types
   ; memory
   ; globals
@@ -113,32 +121,56 @@ let get_fun_env env =
   ; local_wasm_idx_counter
   ; funs_wasm
   ; funs_idx
+  ; funs_name
   }
 
-(* start function: idx = 0 *)
-let fun_wasm_idx_counter = counter 0
+let fun_wasm_idx_counter = counter (-1)
 
 let add_fun_wasm data_typ data_body env =
   let idx = fun_wasm_idx_counter () in
-  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, data_body) ] in
+  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, Some data_body) ] in
+  (idx, { env with funs_wasm })
+
+let add_import_fun_wasm data_typ env =
+  let idx = fun_wasm_idx_counter () in
+  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, None) ] in
   (idx, { env with funs_wasm })
 
 let get_funs_wasm_elts env =
-  List.fold_left
-    (fun (idxs, typs, codes) (idx, typ, code) ->
-      (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ]) )
-    ([], [], []) env.funs_wasm
+  let idxs, functype_bufs, code_bufs =
+    List.fold_left
+      (fun (idxs, typs, codes) (idx, typ, code) ->
+        match code with
+        | Some code -> (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ])
+        | None -> (idxs, typs @ [ typ ], codes) )
+      ([], [], []) env.funs_wasm
+  in
+  (idxs, functype_bufs, code_bufs)
+
+let get_import_funs_wasm_idxs env =
+  List.filter_map
+    (fun (idx, _typ, code) ->
+      match code with Some _ -> None | None -> Some idx )
+    env.funs_wasm
+
+let get_funs_wasm_nb env = List.length env.funs_wasm
 
 let add_fun_idx n env =
   (* Warninig: must be called after add_fun_wasm *)
-  let idx = List.length env.funs_wasm in
+  let idx = List.length env.funs_wasm - 1 in
   let funs_idx = SMap.add n idx env.funs_idx in
-  { env with funs_idx }
+  let funs_name = IMap.add idx n env.funs_name in
+  { env with funs_idx; funs_name }
 
 let get_fun_idx n env =
   match SMap.find_opt n env.funs_idx with
   | Some idx -> Ok idx
   | None -> Error (Format.sprintf "func ident: %s not found in env.funs_idx" n)
+
+let get_fun_name idx env =
+  match IMap.find_opt idx env.funs_name with
+  | Some name -> Ok name
+  | None -> Error (Format.sprintf "func idx: %d not found in env.funs_name" idx)
 
 let empty () =
   let types = SMap.empty in
@@ -150,6 +182,7 @@ let empty () =
   let local_wasm_idx_counter = counter (-1) in
   let funs_wasm = [] in
   let funs_idx = SMap.empty in
+  let funs_name = IMap.empty in
   { types
   ; memory
   ; globals
@@ -159,4 +192,5 @@ let empty () =
   ; local_wasm_idx_counter
   ; funs_wasm
   ; funs_idx
+  ; funs_name
   }
