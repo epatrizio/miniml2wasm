@@ -2,6 +2,6 @@
  (deps
   fact.mml
   fibo.mml
-  print.wat
+  print.mml
   print.js
   (glob_files _wasm/*)))

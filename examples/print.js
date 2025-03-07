@@ -10,7 +10,7 @@ const importObject = {
   },
 };
 
-const bytes = await Deno.readFile("print.wasm");
+const bytes = await Deno.readFile("_wasm/print.wasm");
 const resp_wasm =
   new Response(bytes, {headers: {"Content-Type": "application/wasm"}});
 

@@ -1,0 +1,2 @@
+let print_i32 : i32 -> unit = import fun(i32) : unit;
+print_i32(42)
