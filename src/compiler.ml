@@ -199,8 +199,8 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
           param_types_buf @ [ valtype_buf ] )
         [] idents
     in
-    let result_type_buf = encode_valtype typ in
-    let functype_buf = encode_functype param_type_bufs [ result_type_buf ] in
+    let result_type_buf = if typ = Tunit then [] else [ encode_valtype typ ] in
+    let functype_buf = encode_functype param_type_bufs result_type_buf in
     let func_env = Env.get_fun_env env in
     let func_env =
       List.fold_left
@@ -223,8 +223,10 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
           param_types_buf @ [ valtype_buf ] )
         [] arg_typs
     in
-    let result_type_buf = encode_valtype res_typ in
-    let functype_buf = encode_functype param_type_bufs [ result_type_buf ] in
+    let result_type_buf =
+      if res_typ = Tunit then [] else [ encode_valtype res_typ ]
+    in
+    let functype_buf = encode_functype param_type_bufs result_type_buf in
     let func_idx, env = Env.add_import_fun_wasm functype_buf env in
     let func_idx = Int32.of_int func_idx in
     (* put func_idx on stack for let global var (typing: local is unauthorized) *)
