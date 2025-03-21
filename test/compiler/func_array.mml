@@ -1,0 +1,27 @@
+let double = fun(a : i32) { a * 2 };
+let double_array = fun(arr : i32[3]) {
+  let arr_res = [0,0,0] in
+  let arr_size = (array_size arr) in
+  let idx : i32 ref = ref 0 in
+    begin
+      while !idx < arr_size do
+        arr_res[!idx] := double(arr[!idx]);
+        idx := !idx + 1
+      done;
+      arr_res
+    end
+};
+
+(*let arr0 = [1,2] in*)
+let arr = [10,20,30] in
+let arr = double_array(arr) in (* [20,40,60] *)
+let arr_size = (array_size arr) in
+let idx : i32 ref = ref 0 in
+let sum : i32 ref = ref 0 in
+  begin
+    while !idx < arr_size do
+      sum := !sum + arr[!idx];
+      idx := !idx + 1
+    done;
+    !sum  (* 120 *)
+  end

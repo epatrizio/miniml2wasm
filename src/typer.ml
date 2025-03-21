@@ -242,6 +242,11 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         Ok
           ( (loc, Tfun (args_typ, typ_body), Efun_init (idents, typ_body, body))
           , env )
+      | typ, Tarray (ident_typ, size)
+        when typ = Tunknown || typ = Tarray (ident_typ, size) ->
+        Ok
+          ( (loc, Tfun (args_typ, typ_body), Efun_init (idents, typ_body, body))
+          , env )
       | typ, typ_body when typ != Tunknown && typ_body != typ ->
         let msg =
           Format.sprintf

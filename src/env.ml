@@ -110,8 +110,8 @@ let get_fun_env env =
   let locals_wasm = [] in
   let local_wasm_idx_counter = counter (-1) in
   let funs_wasm = env.funs_wasm in
-  let funs_idx = SMap.empty in
-  let funs_name = IMap.empty in
+  let funs_idx = env.funs_idx in
+  let funs_name = env.funs_name in
   { types
   ; memory
   ; globals
