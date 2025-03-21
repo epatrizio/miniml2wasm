@@ -63,7 +63,7 @@ and analyse_expr (loc, typ, expr') env =
   | Earray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Earray_size (typ_ident, name)), env)
-  | Efun_init (idents, typ, body) ->
+  | Efun_init (is_export, idents, typ, body) ->
     (* _env_local: let local scope *)
     let fresh_idents, env_local =
       List.fold_left
@@ -74,7 +74,7 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) idents
     in
     let* body, _env_local = analyse_block body env_local in
-    Ok ((loc, typ, Efun_init (fresh_idents, typ, body)), env)
+    Ok ((loc, typ, Efun_init (is_export, fresh_idents, typ, body)), env)
   | Efun_import_init typ as fun_import -> Ok ((loc, typ, fun_import), env)
   | Efun_call ((typ_ident, name), el) ->
     let* name = Env.get_name name env in

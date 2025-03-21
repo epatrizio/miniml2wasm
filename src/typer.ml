@@ -218,7 +218,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
-  | Efun_init (idents, _typ, body) ->
+  | Efun_init (is_export, idents, _typ, body) ->
     List.fold_left
       (fun _ (typ, _name) ->
         if typ = Tunknown then
@@ -240,12 +240,16 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         when (typ_body = Tunit || typ_body = Tbool || typ_body = Ti32)
              && (typ = Tunknown || typ = typ_body) ->
         Ok
-          ( (loc, Tfun (args_typ, typ_body), Efun_init (idents, typ_body, body))
+          ( ( loc
+            , Tfun (args_typ, typ_body)
+            , Efun_init (is_export, idents, typ_body, body) )
           , env )
       | typ, Tarray (ident_typ, size)
         when typ = Tunknown || typ = Tarray (ident_typ, size) ->
         Ok
-          ( (loc, Tfun (args_typ, typ_body), Efun_init (idents, typ_body, body))
+          ( ( loc
+            , Tfun (args_typ, typ_body)
+            , Efun_init (is_export, idents, typ_body, body) )
           , env )
       | typ, typ_body when typ != Tunknown && typ_body != typ ->
         let msg =

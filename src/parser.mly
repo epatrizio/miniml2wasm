@@ -69,8 +69,8 @@ let expr_bis :=
   | ARRAY_SIZE; ~ = ident; <Earray_size>
   | FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
       match typ with
-      | Some typ -> Efun_init (idents, typ, body)
-      | None -> Efun_init (idents, Tunknown, body) }
+      | Some typ -> Efun_init (false, idents, typ, body)
+      | None -> Efun_init (false, idents, Tunknown, body) }
   | IMPORT; FUN; typs = delimited(LPAREN, separated_list(COMMA, typ), RPAREN); typ = preceded(COLON, typ); {
       Efun_import_init (Tfun (typs, typ)) }
   | ~ = ident; ~ = delimited(LPAREN, separated_list(COMMA, expr), RPAREN); <Efun_call>

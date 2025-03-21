@@ -191,7 +191,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Efun_init (idents, typ, body) ->
+  | Efun_init (_is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left
         (fun param_types_buf (typ, _) ->
