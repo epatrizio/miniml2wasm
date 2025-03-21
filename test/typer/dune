@@ -26,13 +26,15 @@
   fun_5.mml
   fun_6.mml
   fun_7.mml
+  fun_8.mml
+  fun_9.mml
+  fun_10.mml
   global_binop.mml
+  import.mml
   local_binop.mml
   local_if.mml
   local_unop.mml
   local.mml
-  print_i32.mml
-  read_i32.mml
   ref_assign.mml
   ref_binop_1.mml
   ref_binop_2.mml

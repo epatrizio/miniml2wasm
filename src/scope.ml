@@ -75,6 +75,7 @@ and analyse_expr (loc, typ, expr') env =
     in
     let* body, _env_local = analyse_block body env_local in
     Ok ((loc, typ, Efun_init (fresh_idents, typ, body)), env)
+  | Efun_import_init typ as fun_import -> Ok ((loc, typ, fun_import), env)
   | Efun_call ((typ_ident, name), el) ->
     let* name = Env.get_name name env in
     let el, env =
@@ -85,7 +86,6 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Efun_call ((typ_ident, name), el)), env)
-  | Eread -> Ok ((loc, typ, Eread), env)
   | Estmt stmt ->
     let* stmt, env = analyse_stmt stmt env in
     Ok ((loc, typ, Estmt stmt), env)
@@ -103,9 +103,17 @@ and analyse_block block env =
 and analyse_stmt (loc, stmt') env =
   match stmt' with
   | Slet ((typ_ident, name), expr) ->
-    let* expr, env = analyse_expr expr env in
-    let fresh_name, env = Env.add_global name env in
-    Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+    let _, _, expr' = expr in
+    begin
+      match expr' with
+      | Efun_import_init _ ->
+        let env = Env.add_global_without_fresh_name name env in
+        Ok ((loc, Slet ((typ_ident, name), expr)), env)
+      | _ ->
+        let* expr, env = analyse_expr expr env in
+        let fresh_name, env = Env.add_global name env in
+        Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+    end
   | Srefassign ((typ_ident, name), expr) ->
     let* expr, env = analyse_expr expr env in
     let* name = Env.get_name name env in
@@ -122,9 +130,6 @@ and analyse_stmt (loc, stmt') env =
   | Sassert expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, Sassert expr), env)
-  | Sprint expr ->
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, Sprint expr), env)
   | Sunreachable -> Ok ((loc, Sunreachable), env)
   | Snop -> Ok ((loc, Snop), env)
 

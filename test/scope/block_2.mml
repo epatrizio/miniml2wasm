@@ -1,7 +1,7 @@
 let x : i32 = 42 in
 begin
   begin
-    print_i32 x;
+    x; (* check scope error, not unit type *)
     let y = true in
       y
   end;

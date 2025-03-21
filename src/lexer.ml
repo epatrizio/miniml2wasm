@@ -42,6 +42,7 @@ let rec token buf =
   | ">=" -> GE
   | '=' -> EQ
   | ":=" -> REFEQ
+  | "->" -> ARROW
   | '(' -> LPAREN
   | ')' -> RPAREN
   | '[' -> LBRACKET
@@ -64,13 +65,12 @@ let rec token buf =
   | "done" -> DONE
   | "ref" -> REF
   | "fun" -> FUN
+  | "import" -> IMPORT
   | "&&" -> AND
   | "||" -> OR
   | "not" -> NOT
   | "array_size" -> ARRAY_SIZE
   | "assert" -> ASSERT
-  | "print_i32" -> PRINT_I32
-  | "read_i32" -> READ_I32
   | "unit" -> TUNIT
   | "bool" -> TBOOL
   | "i32" -> TI32

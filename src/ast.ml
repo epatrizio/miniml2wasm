@@ -56,8 +56,8 @@ and expr' =
   | Earray of var * expr
   | Earray_size of ident
   | Efun_init of ident list * typ * block
+  | Efun_import_init of typ
   | Efun_call of ident * expr list
-  | Eread
   | Estmt of stmt (* stmt should be seen as an expr of type unit. OK? *)
 
 and block =
@@ -72,7 +72,6 @@ and stmt' =
   | Sarrayassign of ident * expr * expr
   | Swhile of expr * block
   | Sassert of expr
-  | Sprint of expr
   | Sunreachable
   | Snop
 
@@ -164,13 +163,20 @@ and print_expr fmt (_, _, expr) =
     fprintf fmt {|fun(%a) : %a {@.@[<v 2>%a@]@.}|}
       (pp_print_list ~pp_sep (print_ident ~typ_display:true))
       idents print_typ typ print_block body
+  | Efun_import_init typ -> begin
+    match typ with
+    | Tfun (typs, typ) ->
+      fprintf fmt {|import fun(%a) : %a|}
+        (pp_print_list ~pp_sep print_typ)
+        typs print_typ typ
+    | _ -> assert false
+  end
   | Efun_call (ident, el) ->
     fprintf fmt "%a(%a)"
       (print_ident ~typ_display:false)
       ident
       (pp_print_list ~pp_sep print_expr)
       el
-  | Eread -> fprintf fmt {|read_i32|}
   | Estmt stmt -> fprintf fmt {|%a|} print_stmt stmt
 
 and print_stmt fmt (_, stmt) =
@@ -190,7 +196,6 @@ and print_stmt fmt (_, stmt) =
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr
-  | Sprint expr -> fprintf fmt {|print_i32 %a|} print_expr expr
   | Sunreachable -> fprintf fmt {|unreachable|}
   | Snop -> fprintf fmt {|nop|}
 

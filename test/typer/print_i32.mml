@@ -1,3 +1,0 @@
-let b1 = true in
-let b2 = false in
-  print_i32 (b1 || b2)

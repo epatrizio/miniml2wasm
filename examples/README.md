@@ -2,16 +2,20 @@
 
 These first small examples show how to use `miniml` language in close real-life contexts.
 
-- [Factorial implementation](https://en.wikipedia.org/wiki/Factorial): `dune exec miniml2wasm -- fact.mml`
+- [Factorial implementations](https://en.wikipedia.org/wiki/Factorial): `dune exec miniml2wasm -- fact.mml`
 
-- [Javascript integration](https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API):
-  - `print.wat` (Wasm module): displays 42 (i32) - import print_i32 function
+- [Fibonacci implementations](https://en.wikipedia.org/wiki/Fibonacci_sequence): `dune exec miniml2wasm -- fibo.mml`
+
+- [Javascript integrations](https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API):
+  - `print.mml`: displays 42 (i32) - import `print_i32` function
   - `print.js`:
-    - host function print_i32 definition and wasm module print.wasm loading
-    - `deno run --allow-read print.js`: execution with [deno, modern js runtime](https://deno.com)
-  - `read.wat` (Wasm module): user is prompted to enter an i32 and i32*2 is displayed - import print_i32 and read_i32 functions
-  - `read.js`:
-    - host function print_i32 and read_i32 definitions and wasm module read.wasm loading
-    - `deno run --allow-read read.js`
+    - host function `print_i32` definition and wasm module print.wasm (print.mml compilation result) loading
+    - `deno run --allow-read print.js`: execution with [deno (a modern js runtime)](https://deno.com)
+  - `import.mml`: user is prompted to enter an i32 and compute(i32) result is displayed - import `print_i32`, `read_i32` and `compute` functions
+  - `import.js`:
+    - host function `print_i32`, `read_i32` and `compute` definitions and wasm module import.wasm (import.mml compilation result) loading
+    - `deno run --allow-read import.js`
 
-*Nb. Example print is part of the cram test suite*
+*fact, fibo and print examples are part of the cram test suite*
+
+*import has to be run manually (infinite loop)*

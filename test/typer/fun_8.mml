@@ -1,0 +1,2 @@
+let identity : i32 -> bool = fun(a : i32) : i32 { a } in
+42

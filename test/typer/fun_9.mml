@@ -1,0 +1,2 @@
+let empty : unit -> i32 = fun( ) : unit { () } in
+()

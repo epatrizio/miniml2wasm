@@ -155,6 +155,13 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc "attempt to perform a non boolean if expression condition"
     end
   | Elet ((ident_typ, ident_name), e1, e2) ->
+    let _, _, e1' = e1 in
+    begin
+      match e1' with
+      | Efun_import_init _ ->
+        error loc "local scope import functions are not allowed"
+      | _ -> ()
+    end;
     let* (loc_e1, typ_e1, e1'), env = typecheck_expr e1 env in
     begin
       match (ident_typ, typ_e1) with
@@ -244,6 +251,20 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc msg
       | _ -> assert false
     end
+  | Efun_import_init fun_typ as fun_import -> begin
+    match fun_typ with
+    | Tfun (_typs, Tunknown) ->
+      error loc "return type of an import function must be specified"
+    | Tfun (typs, _typ) as fun_typ ->
+      List.iter
+        (fun typ ->
+          if typ = Tunknown then
+            error loc "arguments types of an import function must be specified"
+          else () )
+        typs;
+      Ok ((loc, fun_typ, fun_import), env)
+    | _ -> error loc "attempt to perform an import on a non function type"
+  end
   | Efun_call ((_ident_typ, ident_name), el) ->
     let* ident_typ = Env.get_type ident_name env in
     begin
@@ -273,7 +294,6 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform a function call on a non function var"
     end
-  | Eread -> Ok ((loc, Ti32, Eread), env)
   | Estmt stmt ->
     let* stmt, env = typecheck_stmt stmt env in
     Ok ((loc, Tunit, Estmt stmt), env)
@@ -304,11 +324,13 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
     end
   | Srefassign ((_, ident_name), expr) ->
     let* ident_typ = Env.get_type ident_name env in
-    let* (_, typ_e, _), env = typecheck_expr expr env in
+    let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
       | Tref typ, typ_e when typ = typ_e ->
-        Ok ((loc, Srefassign ((ident_typ, ident_name), expr)), env)
+        Ok
+          ( (loc, Srefassign ((ident_typ, ident_name), (loc_e, typ_e, expr')))
+          , env )
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
@@ -362,17 +384,6 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       let message =
         Format.sprintf
           {|attempt to perform an assert call on a non boolean value (%s)|}
-          (str_typ typ)
-      in
-      error loc message )
-  | Sprint expr -> (
-    let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
-    match typ_e with
-    | Ti32 -> Ok ((loc, Sprint (loc_e, typ_e, expr')), env)
-    | typ ->
-      let message =
-        Format.sprintf
-          {|attempt to perform a print_i32 call on a non i32 value (%s)|}
           (str_typ typ)
       in
       error loc message )

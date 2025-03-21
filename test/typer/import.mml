@@ -1,0 +1,2 @@
+let import_fun : i32 = import fun(i32) : i32;
+42

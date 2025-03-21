@@ -4,6 +4,6 @@ begin
     let y = true in
       y
   end;
-  print_i32 x;
+  x;  (* check scope error, not unit type *)
   y (* nested blocks, y not in scope! *)
 end

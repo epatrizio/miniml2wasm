@@ -199,8 +199,8 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
           param_types_buf @ [ valtype_buf ] )
         [] idents
     in
-    let result_type_buf = encode_valtype typ in
-    let functype_buf = encode_functype param_type_bufs [ result_type_buf ] in
+    let result_type_buf = if typ = Tunit then [] else [ encode_valtype typ ] in
+    let functype_buf = encode_functype param_type_bufs result_type_buf in
     let func_env = Env.get_fun_env env in
     let func_env =
       List.fold_left
@@ -215,6 +215,24 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put func_idx on stack for let local/global var *)
     write_i32_const_u buf func_idx;
     Ok (buf, stack_nb_elts + 1, env)
+  | Efun_import_init (Tfun (arg_typs, res_typ)) ->
+    let param_type_bufs =
+      List.fold_left
+        (fun param_types_buf typ ->
+          let valtype_buf = encode_valtype typ in
+          param_types_buf @ [ valtype_buf ] )
+        [] arg_typs
+    in
+    let result_type_buf =
+      if res_typ = Tunit then [] else [ encode_valtype res_typ ]
+    in
+    let functype_buf = encode_functype param_type_bufs result_type_buf in
+    let func_idx, env = Env.add_import_fun_wasm functype_buf env in
+    let func_idx = Int32.of_int func_idx in
+    (* put func_idx on stack for let global var (typing: local is unauthorized) *)
+    write_i32_const_u buf func_idx;
+    Ok (buf, stack_nb_elts + 1, env)
+  | Efun_import_init _ -> assert false
   | Efun_call ((typ, name), el) ->
     let stack_nb_elts, env =
       List.fold_left
@@ -231,10 +249,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let stack_nb_elts = stack_nb_elts + get_stack_nb_elts_evol_after_call typ in
     write_call buf funcidx;
     Ok (buf, stack_nb_elts, env)
-  | Eread ->
-    (* WIP: 2 *)
-    write_call buf 0;
-    Ok (buf, stack_nb_elts + 1, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
@@ -285,12 +299,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let e_then = (loc, Tunit, Estmt (loc, Snop)) in
     let e_else = (loc, Tunit, Estmt (loc, Sunreachable)) in
     compile_expr (loc, Tunit, Eif (expr, e_then, e_else)) stack_nb_elts env
-  | Estmt (_loc, Sprint expr) ->
-    let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
-    Buffer.add_buffer buf expr_buf;
-    (* WIP: 1 *)
-    write_call buf 0;
-    Ok (buf, stack_nb_elts, env)
   | Estmt (_loc, Sunreachable) ->
     write_unreachable buf;
     Ok (buf, stack_nb_elts, env)
@@ -398,36 +406,26 @@ let write_type_section buf functypes =
   write_vector type_buf functypes;
   write_section buf '\x01' type_buf
 
-let write_import_print_i32 () =
+let write_import_fun idx env =
+  let* fun_name = Env.get_fun_name idx env in
   let buf = Buffer.create 32 in
-  (* ascii: "mod" *)
-  write_bytes buf [ 109; 111; 100 ];
-  (* ascii: "print_i32" *)
-  write_bytes buf [ 112; 114; 105; 110; 116; 95; 105; 51; 50 ];
+  write_bytes buf (string_to_ascii "mod");
+  write_bytes buf (string_to_ascii fun_name);
   Buffer.add_char buf '\x00';
-  (* hard-coded: typeidx 1 *)
-  write_u32_of_int buf 1;
-  buf
+  write_u32_of_int buf idx;
+  Ok buf
 
-let write_import_read_i32 () =
-  let buf = Buffer.create 32 in
-  (* ascii: "mod" *)
-  write_bytes buf [ 109; 111; 100 ];
-  (* ascii: "read_i32" *)
-  write_bytes buf [ 114; 101; 97; 100; 95; 105; 51; 50 ];
-  Buffer.add_char buf '\x00';
-  (* hard-coded: typeidx 2 *)
-  write_u32_of_int buf 2;
-  buf
-
-let write_import_section buf =
-  let _print_i32_buf = write_import_print_i32 () in
-  let _read_i32_buf = write_import_read_i32 () in
+let write_import_section buf env =
+  let idxs = Env.get_import_funs_wasm_idxs env in
+  let bufs =
+    List.fold_left
+      (fun bufs idx ->
+        let buf = write_import_fun idx env in
+        match buf with Ok buf -> bufs @ [ buf ] | Error _ -> assert false )
+      [] idxs
+  in
   let import_buf = Buffer.create 16 in
-  (* TODO: [ print_i32_buf; read_i32_buf ]
-     if still imported, the interpreter must define them!
-  *)
-  write_vector import_buf [];
+  write_vector import_buf bufs;
   write_section buf '\x02' import_buf
 
 let write_function_section buf typeidxs =
@@ -468,11 +466,9 @@ let write_code_section buf codes =
   write_vector code_buf codes;
   write_section buf '\x0a' code_buf
 
-let write_start_section buf =
+let write_start_section buf idx =
   let start_buf = Buffer.create 2 in
-  (* hard-coded: start function idx = 0
-     idx should be 2 if print_i32 and read_i32 were imported *)
-  write_u32_of_int start_buf 0;
+  write_u32_of_int start_buf idx;
   write_section buf '\x08' start_buf
 
 let encode_module prog env =
@@ -481,27 +477,19 @@ let encode_module prog env =
   Buffer.add_string wasm_buf "\x00\x61\x73\x6d";
   (* version *)
   Buffer.add_string wasm_buf "\x01\x00\x00\x00";
-
-  (* Must be refacto: https://github.com/epatrizio/miniml2wasm/issues/14 *)
-  (* let i32_valtype_buf = Buffer.create 16 in
-  write_valtype i32_valtype_buf Ti32; *)
-  (* let functype_print_i32_buf = encode_functype [ i32_valtype_buf ] [] in
-  let functype_read_i32_buf = encode_functype [] [ i32_valtype_buf ] in *)
-  (* write_type_section wasm_buf
-    [ functype_start_buf; functype_print_i32_buf; functype_read_i32_buf ]; *)
-
-  (* hard-coded: (0) functype start [][] - (1) print_i32 [i32][] - (2) read_i32 []][i32] *)
   let functype_start_buf = encode_functype [] [] in
   (* First basic approach: prog is fully compile in start function *)
+  (* start function is the last function: import funs THEN funs THEN start fun -> nb_funs=start fun idx *)
   let* start_code_buf, env = encode_prog prog env in
+  let nb_funs = Env.get_funs_wasm_nb env in
   let idxs, functype_bufs, code_bufs = Env.get_funs_wasm_elts env in
-  write_type_section wasm_buf (functype_start_buf :: functype_bufs);
-  write_import_section wasm_buf;
-  write_function_section wasm_buf (0 :: idxs);
+  write_type_section wasm_buf (functype_bufs @ [ functype_start_buf ]);
+  write_import_section wasm_buf env;
+  write_function_section wasm_buf (idxs @ [ nb_funs ]);
   write_memory_section wasm_buf env;
   write_global_section wasm_buf env;
-  write_start_section wasm_buf;
-  write_code_section wasm_buf (start_code_buf :: code_bufs);
+  write_start_section wasm_buf nb_funs;
+  write_code_section wasm_buf (code_bufs @ [ start_code_buf ]);
   Ok (wasm_buf, env)
 
 let compile prog env =
