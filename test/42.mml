@@ -3,6 +3,10 @@
 
 (* global scope *)
 
+(* imported function: print_i32 *)
+(* imported functions are only supported at the beginning of the global scope *)
+let print_i32 : i32 -> unit = import fun(i32) : unit;
+
 let x = 40;
 (* let arr : bool[2] = [true,true]; *)
 (* array are not supported in a global context *)
@@ -20,8 +24,6 @@ let identity (*: i32 -> i32*) = fun(x : i32) (*: i32*) {
 let y : i32 = 2 in
 (* var should by mutable *)
 let z : i32 ref = ref 0 in
-(* user input *)
-let r : i32 = read_i32 in
 (* array construct *)
 (* array must be initialized to set the fully type (elements type and size) *)
 let array : bool[2] = [true,true] in
@@ -37,10 +39,9 @@ let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
       (* array col assign *)
       array[0] := false;
       (* if-cond must be in bool type *)
-      (* imported function: print_i32 *)
       (* !z : dereference z var *)
-      if not true then print_i32 !z
-      else print_i32 -(!z)
+      if not true then print_i32(!z)
+      else print_i32(-(!z))
     done;
     (* unary opertations: - not *)
     (* binary opertations: + - * / == != < <= > => *)

@@ -32,9 +32,9 @@ A statement should be seen as an expression of type unit.
 
 Summary of supported language features:
 
-- Value types: unit, bool, i32, reference of type, array of type (fixed size)
-- Expressions: Constants, unary and binary operations, blocks, if condition, let binding local and global, array
-- Statements: assignements, while loop, array_size and print primitives
+- Value types: unit, bool, i32, reference of type, array of type (fixed size), function
+- Expressions: Constants, unary and binary operations, blocks, if condition, let binding local and global, array, function (init & call)
+- Statements: assignements, while loop, array_size and assert primitives
 
 Example of some language main features:
 
@@ -44,6 +44,10 @@ Example of some language main features:
 (* type is optional, it can be inferred *)
 
 (* global scope *)
+
+(* imported function: print_i32 *)
+(* imported functions are only supported at the beginning of the global scope *)
+let print_i32 : i32 -> unit = import fun(i32) : unit;
 
 let x = 40;
 (* let arr : bool[2] = [true,true]; *)
@@ -62,8 +66,6 @@ let identity (*: i32 -> i32*) = fun(x : i32) (*: i32*) {
 let y : i32 = 2 in
 (* var should by mutable *)
 let z : i32 ref = ref 0 in
-(* user input *)
-let r : i32 = read_i32 in
 (* array construct *)
 (* array must be initialized to set the fully type (elements type and size) *)
 let array : bool[2] = [true,true] in
@@ -79,10 +81,9 @@ let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
       (* array col assign *)
       array[0] := false;
       (* if-cond must be in bool type *)
-      (* imported function: print_i32 *)
       (* !z : dereference z var *)
-      if not true then print_i32 !z
-      else print_i32 -(!z)
+      if not true then print_i32(!z)
+      else print_i32(-(!z))
     done;
     (* unary opertations: - not *)
     (* binary opertations: + - * / == != < <= > => *)
@@ -94,12 +95,13 @@ let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
 Compilation steps:
 
 ```shell-session
-$ dune exec miniml2wasm -- fact.mml
+$ dune exec miniml2wasm -- file_name.mml
 parsing ...
+unused vars checking ... ;; --unused-vars option
 scope analysing ...
 typechecking ...
 compiling ...
-compilation target file _wasm/fact.wasm: done!
+compilation target file _wasm/file_name.wasm: done!
 ```
 
 See [test suite files](https://github.com/epatrizio/miniml2wasm/tree/main/test/) for examples of all language elements.
@@ -113,6 +115,16 @@ Variables and expressions can be inferred. But not function arguments, whose typ
 
 Like the very interesting [AssemblyScript](https://www.assemblyscript.org) language,
 we're offering here a less powerful, sometimes limited, but sufficient and highly oriented type system to target WebAssembly.
+
+### About import and export
+
+This compiler specifically targets wasm, so it's interesting to implement these features:
+
+- [import](https://webassembly.github.io/spec/core/binary/modules.html#binary-importsec):
+function signatures to be implemented in the host language
+
+- [export](https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec):
+specific function (`export` #tag before definition) that can be called in the host language (coming soon!)
 
 ## WebAssembly tools
 
@@ -143,8 +155,7 @@ and the [Wasm bytecode](https://webassembly.github.io/spec/core/binary/index.htm
 ## Current status
 
 This is the very beginning of the project. Its status is experimental.\
-However, It's already possible to do some fun stuff, and when functions will be supported (next step),
-this `miniml` language fragment will start to look interesting.
+However, It's already possible to do some fun stuff, this `miniml` language fragment will start to look interesting ;-)
 
 - See [./examples](https://github.com/epatrizio/miniml2wasm/tree/main/examples)
 - See [./test/compiler](https://github.com/epatrizio/miniml2wasm/tree/main/test/compiler)
