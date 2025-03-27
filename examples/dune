@@ -1,5 +1,7 @@
 (cram
  (deps
+  export.mml
+  export.js
   fact.mml
   fibo.mml
   print.mml

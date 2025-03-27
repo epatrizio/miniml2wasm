@@ -1,0 +1,2 @@
+let double = export fun(a : i32) { a * 2 };
+()
