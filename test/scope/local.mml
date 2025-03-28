@@ -1,0 +1,4 @@
+let x = 40;
+let x = 2 in
+let x = false in  (* is possible if a global variable of the same name does not exist *)
+x   

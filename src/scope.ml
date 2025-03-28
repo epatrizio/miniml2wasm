@@ -38,7 +38,7 @@ and analyse_expr (loc, typ, expr') env =
   | Elet ((typ_ident, name), e1, e2) ->
     (* _env_local: let local scope *)
     let* e1, env_local = analyse_expr e1 env in
-    let fresh_name, env_local = Env.add_local name env_local in
+    let* fresh_name, env_local = Env.add_local name env_local in
     let* e2, _env_local = analyse_expr e2 env_local in
     Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
   | Eref expr ->
@@ -68,9 +68,11 @@ and analyse_expr (loc, typ, expr') env =
     let fresh_idents, env_local =
       List.fold_left
         (fun (fresh_idents, env) (typ_ident, name) ->
-          let fresh_name, env = Env.add_local name env in
-          let fresh_idents = fresh_idents @ [ (typ_ident, fresh_name) ] in
-          (fresh_idents, env) )
+          match Env.add_local name env with
+          | Error _ -> assert false
+          | Ok (fresh_name, env) ->
+            let fresh_idents = fresh_idents @ [ (typ_ident, fresh_name) ] in
+            (fresh_idents, env) )
         ([], env) idents
     in
     let* body, _env_local = analyse_block body env_local in

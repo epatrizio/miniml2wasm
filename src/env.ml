@@ -51,9 +51,17 @@ let add_global_without_fresh_name n env =
     Ok { env with globals }
 
 let add_local n env =
-  let fresh_name = fresh () in
-  let locals = SMap.add n fresh_name env.locals in
-  (fresh_name, { env with locals })
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error
+      (Format.sprintf
+         "ident: %s already exists in global scope. A local var cannot have \
+          the same name as a global var!"
+         n )
+  | None ->
+    let fresh_name = fresh () in
+    let locals = SMap.add n fresh_name env.locals in
+    Ok (fresh_name, { env with locals })
 
 let get_name n env =
   match SMap.find_opt n env.locals with
