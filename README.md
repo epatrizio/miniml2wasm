@@ -54,9 +54,10 @@ let x = 40;
 (* array are not supported in a global context *)
 
 (* function can be global and local *)
+(* export - optional attribute - functions must be global *)
 (* return type can be inferred, argument type not! *)
 (*   > more details about typing in the following documentation *)
-let identity (*: i32 -> i32*) = fun(x : i32) (*: i32*) {
+let identity (*: i32 -> i32*) = export fun(x : i32) (*: i32*) {
   x
 };
 
@@ -124,7 +125,7 @@ This compiler specifically targets wasm, so it's interesting to implement these 
 function signatures to be implemented in the host language
 
 - [export](https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec):
-specific function (`export` #tag before definition) that can be called in the host language (coming soon!)
+specific function (`export` #tag before definition) that can be called in the host language
 
 ## WebAssembly tools
 

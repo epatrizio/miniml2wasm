@@ -16,7 +16,7 @@ type ('a, 'b) t =
   ; globals_wasm : (string * (int * 'b)) list
   ; locals_wasm : (string * (int * 'a)) list
   ; local_wasm_idx_counter : unit -> int
-  ; funs_wasm : (int * 'b * 'b option) list
+  ; funs_wasm : (int * bool * 'b * 'b option) list
   ; funs_idx : int SMap.t
   ; funs_name : string IMap.t
   }
@@ -34,18 +34,34 @@ let fresh =
     Format.sprintf "v%d" count
 
 let add_global n env =
-  let fresh_name = fresh () in
-  let globals = SMap.add n fresh_name env.globals in
-  (fresh_name, { env with globals })
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error (Format.sprintf "ident: %s already exists in global scope" n)
+  | None ->
+    let fresh_name = fresh () in
+    let globals = SMap.add n fresh_name env.globals in
+    Ok (fresh_name, { env with globals })
 
 let add_global_without_fresh_name n env =
-  let globals = SMap.add n n env.globals in
-  { env with globals }
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error (Format.sprintf "ident: %s already exists in global scope" n)
+  | None ->
+    let globals = SMap.add n n env.globals in
+    Ok { env with globals }
 
 let add_local n env =
-  let fresh_name = fresh () in
-  let locals = SMap.add n fresh_name env.locals in
-  (fresh_name, { env with locals })
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error
+      (Format.sprintf
+         "ident: %s already exists in global scope. A local var cannot have \
+          the same name as a global var!"
+         n )
+  | None ->
+    let fresh_name = fresh () in
+    let locals = SMap.add n fresh_name env.locals in
+    Ok (fresh_name, { env with locals })
 
 let get_name n env =
   match SMap.find_opt n env.locals with
@@ -126,31 +142,43 @@ let get_fun_env env =
 
 let fun_wasm_idx_counter = counter (-1)
 
-let add_fun_wasm data_typ data_body env =
+let add_fun_wasm is_export data_typ data_body env =
   let idx = fun_wasm_idx_counter () in
-  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, Some data_body) ] in
+  let funs_wasm =
+    env.funs_wasm @ [ (idx, is_export, data_typ, Some data_body) ]
+  in
   (idx, { env with funs_wasm })
 
 let add_import_fun_wasm data_typ env =
   let idx = fun_wasm_idx_counter () in
-  let funs_wasm = env.funs_wasm @ [ (idx, data_typ, None) ] in
+  let funs_wasm = env.funs_wasm @ [ (idx, false, data_typ, None) ] in
   (idx, { env with funs_wasm })
 
 let get_funs_wasm_elts env =
-  let idxs, functype_bufs, code_bufs =
+  let idxs, is_exports, functype_bufs, code_bufs =
     List.fold_left
-      (fun (idxs, typs, codes) (idx, typ, code) ->
+      (fun (idxs, is_exports, typs, codes) (idx, is_export, typ, code) ->
         match code with
-        | Some code -> (idxs @ [ idx ], typs @ [ typ ], codes @ [ code ])
-        | None -> (idxs, typs @ [ typ ], codes) )
-      ([], [], []) env.funs_wasm
+        | Some code ->
+          ( idxs @ [ idx ]
+          , is_exports @ [ is_export ]
+          , typs @ [ typ ]
+          , codes @ [ code ] )
+        | None -> (idxs, is_exports, typs @ [ typ ], codes) )
+      ([], [], [], []) env.funs_wasm
   in
-  (idxs, functype_bufs, code_bufs)
+  (idxs, is_exports, functype_bufs, code_bufs)
 
 let get_import_funs_wasm_idxs env =
   List.filter_map
-    (fun (idx, _typ, code) ->
+    (fun (idx, _is_export, _typ, code) ->
       match code with Some _ -> None | None -> Some idx )
+    env.funs_wasm
+
+let get_export_funs_wasm_idxs env =
+  List.filter_map
+    (fun (idx, is_export, _typ, code) ->
+      match code with Some _ when is_export -> Some idx | _ -> None )
     env.funs_wasm
 
 let get_funs_wasm_nb env = List.length env.funs_wasm

@@ -191,7 +191,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Efun_init (idents, typ, body) ->
+  | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left
         (fun param_types_buf (typ, _) ->
@@ -210,7 +210,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let* func_code_buf, _func_env =
       encode_prog body ~stack_drop:false func_env
     in
-    let func_idx, env = Env.add_fun_wasm functype_buf func_code_buf env in
+    let func_idx, env =
+      Env.add_fun_wasm is_export functype_buf func_code_buf env
+    in
     let func_idx = Int32.of_int func_idx in
     (* put func_idx on stack for let local/global var *)
     write_i32_const_u buf func_idx;
@@ -415,6 +417,14 @@ let write_import_fun idx env =
   write_u32_of_int buf idx;
   Ok buf
 
+let write_export_fun idx env =
+  let* fun_name = Env.get_fun_name idx env in
+  let buf = Buffer.create 32 in
+  write_bytes buf (string_to_ascii fun_name);
+  Buffer.add_char buf '\x00';
+  write_u32_of_int buf idx;
+  Ok buf
+
 let write_import_section buf env =
   let idxs = Env.get_import_funs_wasm_idxs env in
   let bufs =
@@ -461,15 +471,28 @@ let write_global_section buf env =
     write_section buf '\x06' global_buf
   end
 
-let write_code_section buf codes =
-  let code_buf = Buffer.create 16 in
-  write_vector code_buf codes;
-  write_section buf '\x0a' code_buf
+let write_export_section buf env =
+  let idxs = Env.get_export_funs_wasm_idxs env in
+  let bufs =
+    List.fold_left
+      (fun bufs idx ->
+        let buf = write_export_fun idx env in
+        match buf with Ok buf -> bufs @ [ buf ] | Error _ -> assert false )
+      [] idxs
+  in
+  let export_buf = Buffer.create 16 in
+  write_vector export_buf bufs;
+  write_section buf '\x07' export_buf
 
 let write_start_section buf idx =
   let start_buf = Buffer.create 2 in
   write_u32_of_int start_buf idx;
   write_section buf '\x08' start_buf
+
+let write_code_section buf codes =
+  let code_buf = Buffer.create 16 in
+  write_vector code_buf codes;
+  write_section buf '\x0a' code_buf
 
 let encode_module prog env =
   let wasm_buf = Buffer.create 256 in
@@ -482,12 +505,15 @@ let encode_module prog env =
   (* start function is the last function: import funs THEN funs THEN start fun -> nb_funs=start fun idx *)
   let* start_code_buf, env = encode_prog prog env in
   let nb_funs = Env.get_funs_wasm_nb env in
-  let idxs, functype_bufs, code_bufs = Env.get_funs_wasm_elts env in
+  let idxs, _is_exports, functype_bufs, code_bufs =
+    Env.get_funs_wasm_elts env
+  in
   write_type_section wasm_buf (functype_bufs @ [ functype_start_buf ]);
   write_import_section wasm_buf env;
   write_function_section wasm_buf (idxs @ [ nb_funs ]);
   write_memory_section wasm_buf env;
   write_global_section wasm_buf env;
+  write_export_section wasm_buf env;
   write_start_section wasm_buf nb_funs;
   write_code_section wasm_buf (code_bufs @ [ start_code_buf ]);
   Ok (wasm_buf, env)

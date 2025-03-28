@@ -3,8 +3,13 @@
   block_1.mml
   block_2.mml
   block_3.mml
-  global.mml
+  global_1.mml
+  global_2.mml
+  global_export_1.mml
+  global_export_2.mml
+  global_import.mml
   let.mml
+  local.mml
   ref.mml
   var.mml
   (glob_files _wasm/*)))

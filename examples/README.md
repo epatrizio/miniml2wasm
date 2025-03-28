@@ -15,7 +15,9 @@ These first small examples show how to use `miniml` language in close real-life 
   - `import.js`:
     - host function `print_i32`, `read_i32` and `compute` definitions and wasm module import.wasm (import.mml compilation result) loading
     - `deno run --allow-read import.js`
+  - `export.mml`: exports a function whose name is `double`
+  - `export.js`: `double` function (defined in the `export.wasm` module) call
 
-*fact, fibo and print examples are part of the cram test suite*
+*fact, fibo, export and print examples are part of the cram test suite*
 
 *import has to be run manually (infinite loop)*

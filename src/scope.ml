@@ -38,7 +38,7 @@ and analyse_expr (loc, typ, expr') env =
   | Elet ((typ_ident, name), e1, e2) ->
     (* _env_local: let local scope *)
     let* e1, env_local = analyse_expr e1 env in
-    let fresh_name, env_local = Env.add_local name env_local in
+    let* fresh_name, env_local = Env.add_local name env_local in
     let* e2, _env_local = analyse_expr e2 env_local in
     Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
   | Eref expr ->
@@ -63,18 +63,20 @@ and analyse_expr (loc, typ, expr') env =
   | Earray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Earray_size (typ_ident, name)), env)
-  | Efun_init (idents, typ, body) ->
+  | Efun_init (is_export, idents, typ, body) ->
     (* _env_local: let local scope *)
     let fresh_idents, env_local =
       List.fold_left
         (fun (fresh_idents, env) (typ_ident, name) ->
-          let fresh_name, env = Env.add_local name env in
-          let fresh_idents = fresh_idents @ [ (typ_ident, fresh_name) ] in
-          (fresh_idents, env) )
+          match Env.add_local name env with
+          | Error _ -> assert false
+          | Ok (fresh_name, env) ->
+            let fresh_idents = fresh_idents @ [ (typ_ident, fresh_name) ] in
+            (fresh_idents, env) )
         ([], env) idents
     in
     let* body, _env_local = analyse_block body env_local in
-    Ok ((loc, typ, Efun_init (fresh_idents, typ, body)), env)
+    Ok ((loc, typ, Efun_init (is_export, fresh_idents, typ, body)), env)
   | Efun_import_init typ as fun_import -> Ok ((loc, typ, fun_import), env)
   | Efun_call ((typ_ident, name), el) ->
     let* name = Env.get_name name env in
@@ -107,11 +109,15 @@ and analyse_stmt (loc, stmt') env =
     begin
       match expr' with
       | Efun_import_init _ ->
-        let env = Env.add_global_without_fresh_name name env in
+        let* env = Env.add_global_without_fresh_name name env in
+        Ok ((loc, Slet ((typ_ident, name), expr)), env)
+      | Efun_init (true, _, _, _) ->
+        let* expr, env = analyse_expr expr env in
+        let* env = Env.add_global_without_fresh_name name env in
         Ok ((loc, Slet ((typ_ident, name), expr)), env)
       | _ ->
         let* expr, env = analyse_expr expr env in
-        let fresh_name, env = Env.add_global name env in
+        let* fresh_name, env = Env.add_global name env in
         Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
     end
   | Srefassign ((typ_ident, name), expr) ->
