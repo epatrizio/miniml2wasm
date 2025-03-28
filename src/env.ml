@@ -34,9 +34,13 @@ let fresh =
     Format.sprintf "v%d" count
 
 let add_global n env =
-  let fresh_name = fresh () in
-  let globals = SMap.add n fresh_name env.globals in
-  (fresh_name, { env with globals })
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error (Format.sprintf "ident: %s already exists in global scope" n)
+  | None ->
+    let fresh_name = fresh () in
+    let globals = SMap.add n fresh_name env.globals in
+    Ok (fresh_name, { env with globals })
 
 let add_global_without_fresh_name n env =
   let globals = SMap.add n n env.globals in

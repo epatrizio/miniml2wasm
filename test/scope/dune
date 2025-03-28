@@ -3,7 +3,8 @@
   block_1.mml
   block_2.mml
   block_3.mml
-  global.mml
+  global_1.mml
+  global_2.mml
   let.mml
   ref.mml
   var.mml

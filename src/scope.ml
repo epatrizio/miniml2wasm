@@ -115,7 +115,7 @@ and analyse_stmt (loc, stmt') env =
         Ok ((loc, Slet ((typ_ident, name), expr)), env)
       | _ ->
         let* expr, env = analyse_expr expr env in
-        let fresh_name, env = Env.add_global name env in
+        let* fresh_name, env = Env.add_global name env in
         Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
     end
   | Srefassign ((typ_ident, name), expr) ->
