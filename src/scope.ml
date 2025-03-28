@@ -107,11 +107,11 @@ and analyse_stmt (loc, stmt') env =
     begin
       match expr' with
       | Efun_import_init _ ->
-        let env = Env.add_global_without_fresh_name name env in
+        let* env = Env.add_global_without_fresh_name name env in
         Ok ((loc, Slet ((typ_ident, name), expr)), env)
       | Efun_init (true, _, _, _) ->
         let* expr, env = analyse_expr expr env in
-        let env = Env.add_global_without_fresh_name name env in
+        let* env = Env.add_global_without_fresh_name name env in
         Ok ((loc, Slet ((typ_ident, name), expr)), env)
       | _ ->
         let* expr, env = analyse_expr expr env in

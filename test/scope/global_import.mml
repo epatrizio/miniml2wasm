@@ -1,0 +1,3 @@
+let func = import fun(i32) : unit;
+let func = import fun( ) : bool;
+func(42)

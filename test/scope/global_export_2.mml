@@ -1,0 +1,3 @@
+let func = export fun(a : i32) { a * 2 };
+let func = export fun(a : i32) { a * 3 };
+func(42)

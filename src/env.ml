@@ -43,8 +43,12 @@ let add_global n env =
     Ok (fresh_name, { env with globals })
 
 let add_global_without_fresh_name n env =
-  let globals = SMap.add n n env.globals in
-  { env with globals }
+  match SMap.find_opt n env.globals with
+  | Some _ ->
+    Error (Format.sprintf "ident: %s already exists in global scope" n)
+  | None ->
+    let globals = SMap.add n n env.globals in
+    Ok { env with globals }
 
 let add_local n env =
   let fresh_name = fresh () in

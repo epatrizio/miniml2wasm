@@ -5,6 +5,9 @@
   block_3.mml
   global_1.mml
   global_2.mml
+  global_export_1.mml
+  global_export_2.mml
+  global_import.mml
   let.mml
   ref.mml
   var.mml
