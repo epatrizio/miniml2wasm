@@ -394,7 +394,7 @@ and encode_functype arg_resulttypes ret_resulttypes =
   write_vector buf ret_resulttypes;
   buf
 
-let encode_empty_code () =
+let _encode_empty_code () =
   let buf = Buffer.create 16 in
   write_u32_of_int buf 2;
   (* locals *)
