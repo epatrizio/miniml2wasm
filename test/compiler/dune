@@ -8,6 +8,7 @@
   func_nothing.mml
   func.mml
   if.mml
+  matrix_bounds_1.mml
   matrix.mml
   unused_vars.mml
   while.mml
