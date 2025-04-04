@@ -188,6 +188,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ -> error loc "attempt to dereference a non reference type"
     end
   | Earray_init el ->
+    if List.length el = 0 then error loc "attempt to init a zero-size array";
     let typ, el, _, env =
       List.fold_left
         (fun (typ, el, is_first, env) e ->
