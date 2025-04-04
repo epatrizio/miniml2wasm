@@ -1,0 +1,2 @@
+(* out of bounds array access *)
+let arr = [0,1,2] in arr[3]

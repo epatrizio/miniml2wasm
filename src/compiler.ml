@@ -61,6 +61,16 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
   | _ -> assert false
 
 and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
+  (* 0. out of bounds array access control *)
+  (*    insert assert stmt code: array size > array index *)
+  let array_size_expr = (loc, Ti32, Earray_size (Tunknown, name)) in
+  let assert_stmt =
+    Sassert (loc, Tbool, Ebinop (array_size_expr, Bgt, idx_expr))
+  in
+  let* assert_expr_buf, stack_nb_elts, env =
+    compile_expr (loc, Tunit, Estmt (loc, assert_stmt)) stack_nb_elts env
+  in
+  Buffer.add_buffer buf assert_expr_buf;
   (* 1. get array memory pointer *)
   let idx = get_var_idx buf Get loc name env in
   write_u32_of_int buf idx;

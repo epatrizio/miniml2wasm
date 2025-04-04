@@ -1,6 +1,7 @@
 (cram
  (deps
   array_assert.mml
+  array_bounds.mml
   array.mml
   assert.mml
   block.mml
