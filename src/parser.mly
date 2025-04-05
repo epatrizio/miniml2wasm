@@ -64,7 +64,7 @@ let expr_bis :=
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
-  | LBRACKET; ~ = separated_nonempty_list(COMMA, expr); RBRACKET; <Earray_init>
+  | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
