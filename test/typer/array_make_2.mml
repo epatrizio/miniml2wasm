@@ -1,2 +1,2 @@
-let arr = array_make 1 unit in
+let arr = array_make 1 () in
 42

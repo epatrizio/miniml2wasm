@@ -67,7 +67,7 @@ let expr_bis :=
   | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
-  | ARRAY_MAKE; ~ = CST; ~ = typ; <Earray_make>
+  | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
       match typ with
       | Some typ -> Efun_init (Option.is_some export, idents, typ, body)

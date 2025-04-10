@@ -221,14 +221,25 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
-  | Earray_make (cst, typ) -> begin
-    match cst with
+  | Earray_make (cst_size, expr_init) -> begin
+    match cst_size with
     | Ci32 size when size <= 0l ->
       error loc "attempt to perform a zero-size array_make"
     | Ci32 size -> begin
+      let* (loc, typ, expr_init'), env = typecheck_expr expr_init env in
       match typ with
-      | Ti32 -> Ok ((loc, Tarray (Ti32, size), Earray_make (cst, typ)), env)
-      | Tbool -> Ok ((loc, Tarray (Tbool, size), Earray_make (cst, typ)), env)
+      | Ti32 ->
+        Ok
+          ( ( loc
+            , Tarray (Ti32, size)
+            , Earray_make (cst_size, (loc, Ti32, expr_init')) )
+          , env )
+      | Tbool ->
+        Ok
+          ( ( loc
+            , Tarray (Tbool, size)
+            , Earray_make (cst_size, (loc, Tbool, expr_init')) )
+          , env )
       | _ ->
         error loc "attempt to perform an array_make with non supported type"
     end
