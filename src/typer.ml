@@ -221,6 +221,19 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
+  | Earray_make (cst, typ) -> begin
+    match cst with
+    | Ci32 size when size <= 0l ->
+      error loc "attempt to perform a zero-size array_make"
+    | Ci32 size -> begin
+      match typ with
+      | Ti32 -> Ok ((loc, Tarray (Ti32, size), Earray_make (cst, typ)), env)
+      | Tbool -> Ok ((loc, Tarray (Tbool, size), Earray_make (cst, typ)), env)
+      | _ ->
+        error loc "attempt to perform an array_make with non supported type"
+    end
+    | _ -> error loc "attempt to perform an array_make with a non i32 type size"
+  end
   | Efun_init (is_export, idents, _typ, body) ->
     List.fold_left
       (fun _ (typ, _name) ->

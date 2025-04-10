@@ -201,6 +201,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
+  | Earray_make (_cst, _typ) -> assert false
   | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left

@@ -87,6 +87,7 @@ and analyse_expr (_loc, _typ, expr') vars_use =
     let* vars_use = analyse_var var vars_use in
     analyse_expr expr vars_use
   | Earray_size (_typ_ident, name) -> use_var name vars_use
+  | Earray_make (_cst, _typ) -> Ok vars_use
   | Efun_init (_is_export, idents, _typ, body) ->
     let vars_use =
       List.fold_left

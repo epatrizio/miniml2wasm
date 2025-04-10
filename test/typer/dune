@@ -2,6 +2,9 @@
  (deps
   array_access_indice.mml
   array_global.mml
+  array_make_0.mml
+  array_make_1.mml
+  array_make_2.mml
   array_matrix_typ_uniform_1.mml
   array_matrix_typ_uniform_2.mml
   array_matrix_typ_uniform_3.mml
