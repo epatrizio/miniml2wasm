@@ -201,7 +201,11 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray_make (_cst, _typ) -> assert false
+  | Earray_make (Ci32 size, expr_init) ->
+    let size = Int32.to_int size in
+    let el = List.init size (fun _ -> expr_init) in
+    compile_expr (loc, typ, Earray_init el) stack_nb_elts env
+  | Earray_make (_, _) -> assert false (* typing step control *)
   | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left

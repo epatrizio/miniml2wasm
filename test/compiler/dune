@@ -2,6 +2,7 @@
  (deps
   array_assert.mml
   array_bounds.mml
+  array_make.mml
   array.mml
   assert.mml
   block.mml
