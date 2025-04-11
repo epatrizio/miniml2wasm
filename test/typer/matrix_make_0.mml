@@ -1,0 +1,2 @@
+let mat = array_make 1 [1] in   (* must use matrix_make primitive *)
+42

@@ -63,8 +63,12 @@ and analyse_expr (loc, typ, expr') env =
   | Earray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Earray_size (typ_ident, name)), env)
-  | Earray_make (_cst_size, _expr_init) as earrmake ->
-    Ok ((loc, typ, earrmake), env)
+  | Earray_make (cst_size, expr_init) ->
+    let* expr_init, env = analyse_expr expr_init env in
+    Ok ((loc, typ, Earray_make (cst_size, expr_init)), env)
+  | Earray_matrix_make (cst_size_x, cst_size_y, expr_init) ->
+    let* expr_init, env = analyse_expr expr_init env in
+    Ok ((loc, typ, Earray_matrix_make (cst_size_x, cst_size_y, expr_init)), env)
   | Efun_init (is_export, idents, typ, body) ->
     (* _env_local: let local scope *)
     let fresh_idents, env_local =

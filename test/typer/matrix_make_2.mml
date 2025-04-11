@@ -1,0 +1,2 @@
+let mat = matrix_make true 1 42 in
+42

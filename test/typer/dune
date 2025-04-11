@@ -42,6 +42,12 @@
   local_if.mml
   local_unop.mml
   local.mml
+  matrix_make_0.mml
+  matrix_make_1.mml
+  matrix_make_2.mml
+  matrix_make_3.mml
+  matrix_make_4.mml
+  matrix_make_5.mml
   ref_assign.mml
   ref_binop_1.mml
   ref_binop_2.mml

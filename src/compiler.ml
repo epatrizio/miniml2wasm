@@ -206,6 +206,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let el = List.init size (fun _ -> expr_init) in
     compile_expr (loc, typ, Earray_init el) stack_nb_elts env
   | Earray_make (_, _) -> assert false (* typing step control *)
+  | Earray_matrix_make (_cst_size_x, _cst_size_y, _expr_init) -> assert false
   | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left
