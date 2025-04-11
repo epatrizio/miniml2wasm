@@ -1,0 +1,6 @@
+let arr_1 : i32[4] = array_make 4 0 in
+let arr_2 : bool[6] = array_make 6 true in
+  begin
+    arr_1[0] := 32;
+    (array_size arr_1) + (array_size arr_2) + arr_1[0]
+  end

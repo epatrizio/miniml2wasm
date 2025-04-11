@@ -188,6 +188,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ -> error loc "attempt to dereference a non reference type"
     end
   | Earray_init el ->
+    if List.length el = 0 then error loc "attempt to init a zero-size array";
     let typ, el, _, env =
       List.fold_left
         (fun (typ, el, is_first, env) e ->
@@ -220,6 +221,56 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end
+  | Earray_make (cst_size, expr_init) -> begin
+    match cst_size with
+    | Ci32 size when size <= 0l ->
+      error loc "attempt to perform a zero-size array_make"
+    | Ci32 size -> begin
+      let* (loc, typ, expr_init'), env = typecheck_expr expr_init env in
+      match typ with
+      | Ti32 ->
+        Ok
+          ( ( loc
+            , Tarray (Ti32, size)
+            , Earray_make (cst_size, (loc, Ti32, expr_init')) )
+          , env )
+      | Tbool ->
+        Ok
+          ( ( loc
+            , Tarray (Tbool, size)
+            , Earray_make (cst_size, (loc, Tbool, expr_init')) )
+          , env )
+      | _ ->
+        error loc "attempt to perform an array_make with non supported type"
+    end
+    | _ -> error loc "attempt to perform an array_make with a non i32 type size"
+  end
+  | Earray_matrix_make (cst_size_x, cst_size_y, expr_init) -> begin
+    match (cst_size_x, cst_size_y) with
+    | Ci32 size_x, Ci32 size_y when size_x <= 0l || size_y <= 0l ->
+      error loc "attempt to perform a x or y zero-size matrix_make"
+    | Ci32 size_x, Ci32 size_y -> begin
+      let* (loc, typ, expr_init'), env = typecheck_expr expr_init env in
+      match typ with
+      | Ti32 ->
+        Ok
+          ( ( loc
+            , Tarray (Tarray (Ti32, size_y), size_x)
+            , Earray_matrix_make
+                (cst_size_x, cst_size_y, (loc, Ti32, expr_init')) )
+          , env )
+      | Tbool ->
+        Ok
+          ( ( loc
+            , Tarray (Tarray (Tbool, size_y), size_x)
+            , Earray_matrix_make
+                (cst_size_x, cst_size_y, (loc, Tbool, expr_init')) )
+          , env )
+      | _ ->
+        error loc "attempt to perform a matrix_make with non supported type"
+    end
+    | _ -> error loc "attempt to perform a matrix_make with a non i32 type size"
+  end
   | Efun_init (is_export, idents, _typ, body) ->
     List.fold_left
       (fun _ (typ, _name) ->

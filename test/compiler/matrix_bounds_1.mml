@@ -1,0 +1,2 @@
+let matrix = [[0,0,0],[1,11,111]] in
+matrix[2][0]  (* out of bounds array access ([2]: first level) *)

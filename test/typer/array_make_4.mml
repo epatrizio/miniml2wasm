@@ -1,0 +1,2 @@
+let arr : i32[42] = array_make 1 1 in   (* i32[1] expected *)
+42

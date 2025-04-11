@@ -1,0 +1,2 @@
+let arr = array_make 0 42 in
+42

@@ -2,10 +2,16 @@
  (deps
   array_access_indice.mml
   array_global.mml
+  array_make_0.mml
+  array_make_1.mml
+  array_make_2.mml
+  array_make_3.mml
+  array_make_4.mml
   array_matrix_typ_uniform_1.mml
   array_matrix_typ_uniform_2.mml
   array_matrix_typ_uniform_3.mml
   array_ref.mml
+  array_size_0.mml
   array_size_1.mml
   array_size_2.mml
   array_typ_size.mml
@@ -36,6 +42,12 @@
   local_if.mml
   local_unop.mml
   local.mml
+  matrix_make_0.mml
+  matrix_make_1.mml
+  matrix_make_2.mml
+  matrix_make_3.mml
+  matrix_make_4.mml
+  matrix_make_5.mml
   ref_assign.mml
   ref_binop_1.mml
   ref_binop_2.mml
