@@ -10,6 +10,7 @@
   func.mml
   if.mml
   matrix_bounds_1.mml
+  matrix_make.mml
   matrix.mml
   unused_vars.mml
   while.mml

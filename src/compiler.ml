@@ -206,7 +206,19 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let el = List.init size (fun _ -> expr_init) in
     compile_expr (loc, typ, Earray_init el) stack_nb_elts env
   | Earray_make (_, _) -> assert false (* typing step control *)
-  | Earray_matrix_make (_cst_size_x, _cst_size_y, _expr_init) -> assert false
+  | Earray_matrix_make (Ci32 size_x, Ci32 size_y, expr_init) ->
+    let typ_elt =
+      match typ with
+      | Tarray (Tarray (typ_elt, _), _) -> typ_elt
+      | _ -> assert false
+    in
+    let size_x = Int32.to_int size_x in
+    let array_elt_expr =
+      (loc, Tarray (typ_elt, size_y), Earray_make (Ci32 size_y, expr_init))
+    in
+    let el = List.init size_x (fun _ -> array_elt_expr) in
+    compile_expr (loc, typ, Earray_init el) stack_nb_elts env
+  | Earray_matrix_make (_, _, _) -> assert false (* typing step control *)
   | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left
