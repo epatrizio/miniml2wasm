@@ -111,6 +111,30 @@ compiler:
   stack        : [ i32.const -1 ; i32.const 36 ; i32.const 16 ]
   running instr: local.get 0
   stack        : [ i32.const 0 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.const 4
+  stack        : [ i32.const 4 ; i32.const 0 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.add
+  stack        : [ i32.const 4 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.load 
+  stack        : [ i32.const 2 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 2 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.gt_s
+  stack        : [ i32.const 1 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: (if  
+    (then
+      nop
+    )
+    (else
+      unreachable
+    )
+  )
+  stack        : [ i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: nop
+  stack        : [ i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  stack        : [ i32.const -1 ; i32.const 36 ; i32.const 16 ]
+  running instr: local.get 0
+  stack        : [ i32.const 0 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
   running instr: i32.const 8
   stack        : [ i32.const 8 ; i32.const 0 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
   running instr: i32.add
@@ -140,6 +164,30 @@ compiler:
   running instr: i32.load 
   stack        : [ i32.const 111 ; i32.const -1 ; i32.const 36 ; i32.const 16 ]
   running instr: i32.mul
+  stack        : [ i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: local.get 0
+  stack        : [ i32.const 0 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.const 4
+  stack        : [ i32.const 4 ; i32.const 0 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.add
+  stack        : [ i32.const 4 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.load 
+  stack        : [ i32.const 2 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.const 1
+  stack        : [ i32.const 1 ; i32.const 2 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: i32.gt_s
+  stack        : [ i32.const 1 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: (if  
+    (then
+      nop
+    )
+    (else
+      unreachable
+    )
+  )
+  stack        : [ i32.const -111 ; i32.const 36 ; i32.const 16 ]
+  running instr: nop
+  stack        : [ i32.const -111 ; i32.const 36 ; i32.const 16 ]
   stack        : [ i32.const -111 ; i32.const 36 ; i32.const 16 ]
   running instr: local.get 0
   stack        : [ i32.const 0 ; i32.const -111 ; i32.const 36 ; i32.const 16 ]

@@ -67,11 +67,15 @@ let identity (*: i32 -> i32*) = export fun(x : i32) (*: i32*) {
 let y : i32 = 2 in
 (* var should by mutable *)
 let z : i32 ref = ref 0 in
-(* array construct *)
+(* array construct: direct or with array_make primitive function *)
 (* array must be initialized to set the fully type (elements type and size) *)
+(* let array : bool[2] = array_make 2 true in *)
 let array : bool[2] = [true,true] in
-(* matrix construct *)
-let matrix : i32[2][3] = [[0,0],[1,1],[2,2]] in
+(* matrix construct: direct or with matrix_make primitive function *)
+(* Warning: matrix_make x y default_val produces an i32[y][x] *)
+(*          i32[y] must be seen as the array[x] first dim elements type *)
+(* let matrix : i32[2][3] = matrix_make 3 2 0 in *)
+let matrix : i32[2][3] = [[0,0],[0,0],[0,0]] in
   begin  (* block *)
     (* primitive function: assert. If false-cond, a trap is emit *)
     assert true;

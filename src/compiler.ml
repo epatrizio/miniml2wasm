@@ -61,6 +61,16 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
   | _ -> assert false
 
 and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
+  (* 0. out of bounds array access control *)
+  (*    insert assert stmt code: array size > array index *)
+  let array_size_expr = (loc, Ti32, Earray_size (Tunknown, name)) in
+  let assert_stmt =
+    Sassert (loc, Tbool, Ebinop (array_size_expr, Bgt, idx_expr))
+  in
+  let* assert_expr_buf, stack_nb_elts, env =
+    compile_expr (loc, Tunit, Estmt (loc, assert_stmt)) stack_nb_elts env
+  in
+  Buffer.add_buffer buf assert_expr_buf;
   (* 1. get array memory pointer *)
   let idx = get_var_idx buf Get loc name env in
   write_u32_of_int buf idx;
@@ -191,6 +201,24 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_binop buf Badd;
     write_load buf Ti32;
     Ok (buf, stack_nb_elts + 1, env)
+  | Earray_make (Ci32 size, expr_init) ->
+    let size = Int32.to_int size in
+    let el = List.init size (fun _ -> expr_init) in
+    compile_expr (loc, typ, Earray_init el) stack_nb_elts env
+  | Earray_make (_, _) -> assert false (* typing step control *)
+  | Earray_matrix_make (Ci32 size_x, Ci32 size_y, expr_init) ->
+    let typ_elt =
+      match typ with
+      | Tarray (Tarray (typ_elt, _), _) -> typ_elt
+      | _ -> assert false
+    in
+    let size_x = Int32.to_int size_x in
+    let array_elt_expr =
+      (loc, Tarray (typ_elt, size_y), Earray_make (Ci32 size_y, expr_init))
+    in
+    let el = List.init size_x (fun _ -> array_elt_expr) in
+    compile_expr (loc, typ, Earray_init el) stack_nb_elts env
+  | Earray_matrix_make (_, _, _) -> assert false (* typing step control *)
   | Efun_init (is_export, idents, typ, body) ->
     let param_type_bufs =
       List.fold_left

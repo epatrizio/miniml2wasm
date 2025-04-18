@@ -55,6 +55,8 @@ and expr' =
   | Earray_init of expr list
   | Earray of var * expr
   | Earray_size of ident
+  | Earray_make of cst * expr
+  | Earray_matrix_make of cst * cst * expr
   | Efun_init of bool * ident list * typ * block
   | Efun_import_init of typ
   | Efun_call of ident * expr list
@@ -159,6 +161,11 @@ and print_expr fmt (_, _, expr) =
   | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
   | Earray_size ident ->
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
+  | Earray_make (cst_size, expr_init) ->
+    fprintf fmt {|array_make %a %a|} print_cst cst_size print_expr expr_init
+  | Earray_matrix_make (cst_size_x, cst_size_y, expr_init) ->
+    fprintf fmt {|matrix_make %a %a %a|} print_cst cst_size_x print_cst
+      cst_size_y print_expr expr_init
   | Efun_init (is_export, idents, typ, body) ->
     fprintf fmt {|%sfun(%a) : %a {@.@[<v 2>%a@]@.}|}
       (if is_export then "export " else "")

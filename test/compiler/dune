@@ -1,12 +1,16 @@
 (cram
  (deps
   array_assert.mml
+  array_bounds.mml
+  array_make.mml
   array.mml
   assert.mml
   block.mml
   func_nothing.mml
   func.mml
   if.mml
+  matrix_bounds_1.mml
+  matrix_make.mml
   matrix.mml
   unused_vars.mml
   while.mml
