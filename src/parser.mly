@@ -39,7 +39,7 @@ let prog :=
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
-  | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
+  | ~ = var; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
 

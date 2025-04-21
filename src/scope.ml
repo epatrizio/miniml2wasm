@@ -130,11 +130,11 @@ and analyse_stmt (loc, stmt') env =
     let* expr, env = analyse_expr expr env in
     let* name = Env.get_name name env in
     Ok ((loc, Srefassign ((typ_ident, name), expr)), env)
-  | Sarrayassign ((typ_ident, name), e1, e2) ->
+  | Sarrayassign (var, e1, e2) ->
+    let* var, env = analyse_var var env in
     let* e1, env = analyse_expr e1 env in
     let* e2, env = analyse_expr e2 env in
-    let* name = Env.get_name name env in
-    Ok ((loc, Sarrayassign ((typ_ident, name), e1, e2)), env)
+    Ok ((loc, Sarrayassign (var, e1, e2)), env)
   | Swhile (expr, block) ->
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in
