@@ -4,19 +4,22 @@
 %token <string> NAME
 %token <Ast.cst> CST
 
-// %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
-
-%nonassoc ASSERT
-
 %right OR
 %right AND
+%right ARROW
+%left REF
 %left LT GT LE GE NEQ EQEQ
 %left PLUS MINUS
 %left MUL DIV
 
-%nonassoc UNARY_OP (* unary operators *)
+%nonassoc UNARY_OP (* unary operators - administrative token to distinguish unary minus from subtraction *)
+%nonassoc REF_OP
 %nonassoc ELSE
 %nonassoc IN
+
+%nonassoc ASSERT_PRIM
+%nonassoc ARRAY_MAKE_PRIM
+%nonassoc MATRIX_MAKE_PRIM
 
 %{
 
@@ -27,9 +30,6 @@ open Ast
 %start prog
 
 %type <Ast.prog> prog
-// %type <Ast.expr'> expr_bis
-// %type <Ast.stmt'> stmt_bis
-// %type <Ast.ident> ident
 
 %%
 
@@ -41,7 +41,7 @@ let stmt_bis :=
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
   | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
-  | ASSERT; ~ = expr; <Sassert>
+  | ASSERT; ~ = expr; %prec ASSERT_PRIM <Sassert>
 
 let stmt :=
   | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
@@ -62,13 +62,13 @@ let expr_bis :=
   | BEGIN; ~ = block; END; <Eblock>
   | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
-  | ~ = preceded(REF, expr); <Eref>
+  | ~ = preceded(REF, expr); %prec REF_OP <Eref>
   | EXCL; ~ = ident; <Ederef>
   | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
-  | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
-  | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
+  | ARRAY_MAKE; ~ = CST; ~ = expr; %prec ARRAY_MAKE_PRIM <Earray_make>
+  | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; %prec MATRIX_MAKE_PRIM <Earray_matrix_make>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
       match typ with
       | Some typ -> Efun_init (Option.is_some export, idents, typ, body)
