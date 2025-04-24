@@ -14,8 +14,8 @@
 %left PLUS MINUS
 %left MUL DIV
 
-%nonassoc UNARY_OP (* unary operators - administrative token to distinguish unary minus from subtraction *)
-%nonassoc REF_OP
+%nonassoc unary_op (* unary operators - administrative pseudo-token to distinguish unary minus from subtraction *)
+
 %nonassoc ELSE
 %nonassoc IN
 
@@ -55,12 +55,12 @@ let var :=
 let expr_bis :=
   | ~ = CST; <Ecst>
   | ~ = var; <Evar>
-  | ~ = unop; ~ = expr; %prec UNARY_OP <Eunop>
+  | ~ = unop; ~ = expr; %prec unary_op <Eunop>
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
   | BEGIN; ~ = block; END; <Eblock>
   | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
-  | ~ = preceded(REF, expr); %prec REF_OP <Eref>
+  | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
   | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
