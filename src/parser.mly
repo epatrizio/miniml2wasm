@@ -4,6 +4,8 @@
 %token <string> NAME
 %token <Ast.cst> CST
 
+%right ASSERT
+
 %right OR
 %right AND
 %right ARROW
@@ -16,10 +18,6 @@
 %nonassoc REF_OP
 %nonassoc ELSE
 %nonassoc IN
-
-%nonassoc ASSERT_PRIM
-%nonassoc ARRAY_MAKE_PRIM
-%nonassoc MATRIX_MAKE_PRIM
 
 %{
 
@@ -41,7 +39,7 @@ let stmt_bis :=
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
   | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
-  | ASSERT; ~ = expr; %prec ASSERT_PRIM <Sassert>
+  | ASSERT; ~ = expr; <Sassert>
 
 let stmt :=
   | ~ = stmt_bis; { (($startpos, $endpos), (stmt_bis : stmt')) : stmt }
@@ -67,8 +65,8 @@ let expr_bis :=
   | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
   | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
-  | ARRAY_MAKE; ~ = CST; ~ = expr; %prec ARRAY_MAKE_PRIM <Earray_make>
-  | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; %prec MATRIX_MAKE_PRIM <Earray_matrix_make>
+  | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
+  | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
       match typ with
       | Some typ -> Efun_init (Option.is_some export, idents, typ, body)
