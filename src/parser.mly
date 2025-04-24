@@ -7,6 +7,7 @@
 %right CST
 %right ASSERT
 
+%right EQ
 %right REFEQ
 %right ARROW
 %left REF
