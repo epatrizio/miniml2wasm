@@ -4,6 +4,7 @@
 %token <string> NAME
 %token <Ast.cst> CST
 
+%right CST
 %right ASSERT
 
 %right REFEQ

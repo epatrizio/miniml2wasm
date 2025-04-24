@@ -1,5 +1,5 @@
-let arr_1 : i32[4] = array_make 4 0 in
-let arr_2 : bool[6] = array_make 6 true in
+let arr_1 : i32[4] = array_make 4 40+2 in           (* parenthesis are not usefull (40+2) *)
+let arr_2 : bool[6] = array_make 6 true||false in   (* parenthesis are not usefull (true||false) *)
   begin
     arr_1[0] := 32;
     (array_size arr_1) + (array_size arr_2) + arr_1[0]
