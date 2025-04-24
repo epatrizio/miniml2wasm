@@ -6,16 +6,18 @@
 
 %right ASSERT
 
-%right OR
-%right AND
+%right REFEQ
 %right ARROW
 %left REF
+
+%right OR
+%right AND
 %left LT GT LE GE NEQ EQEQ
 %left PLUS MINUS
 %left MUL DIV
 
 %nonassoc unary_op (* unary operators - administrative pseudo-token to distinguish unary minus from subtraction *)
-
+%nonassoc LBRACKET
 %nonassoc ELSE
 %nonassoc IN
 
