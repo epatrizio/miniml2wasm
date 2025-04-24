@@ -10,6 +10,7 @@
 %right EQ
 %right REFEQ
 %right ARROW
+%left COLON
 %left REF
 
 %right OR
@@ -85,7 +86,7 @@ let expr :=
   | expr = delimited(LPAREN, expr, RPAREN); { expr }
 
 let ident :=
-  | name = NAME; COLON; typ = typ; { (typ, name) : ident }
+  | name = NAME; typ = preceded(COLON, typ); { (typ, name) : ident }
   | name = NAME; { (Tunknown, name) : ident }
 
 %inline binop :
