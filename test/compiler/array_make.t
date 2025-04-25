@@ -29,26 +29,42 @@ compiler array_make:
   stack        : [  ]
   running instr: i32.const 8
   stack        : [ i32.const 8 ]
-  running instr: i32.const 0
-  stack        : [ i32.const 0 ; i32.const 8 ]
+  running instr: i32.const 40
+  stack        : [ i32.const 40 ; i32.const 8 ]
+  running instr: i32.const 2
+  stack        : [ i32.const 2 ; i32.const 40 ; i32.const 8 ]
+  running instr: i32.add
+  stack        : [ i32.const 42 ; i32.const 8 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 12
   stack        : [ i32.const 12 ]
-  running instr: i32.const 0
-  stack        : [ i32.const 0 ; i32.const 12 ]
+  running instr: i32.const 40
+  stack        : [ i32.const 40 ; i32.const 12 ]
+  running instr: i32.const 2
+  stack        : [ i32.const 2 ; i32.const 40 ; i32.const 12 ]
+  running instr: i32.add
+  stack        : [ i32.const 42 ; i32.const 12 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 16
   stack        : [ i32.const 16 ]
-  running instr: i32.const 0
-  stack        : [ i32.const 0 ; i32.const 16 ]
+  running instr: i32.const 40
+  stack        : [ i32.const 40 ; i32.const 16 ]
+  running instr: i32.const 2
+  stack        : [ i32.const 2 ; i32.const 40 ; i32.const 16 ]
+  running instr: i32.add
+  stack        : [ i32.const 42 ; i32.const 16 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 20
   stack        : [ i32.const 20 ]
-  running instr: i32.const 0
-  stack        : [ i32.const 0 ; i32.const 20 ]
+  running instr: i32.const 40
+  stack        : [ i32.const 40 ; i32.const 20 ]
+  running instr: i32.const 2
+  stack        : [ i32.const 2 ; i32.const 40 ; i32.const 20 ]
+  running instr: i32.add
+  stack        : [ i32.const 42 ; i32.const 20 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 0
@@ -71,11 +87,19 @@ compiler array_make:
   stack        : [ i32.const 32 ]
   running instr: i32.const 1
   stack        : [ i32.const 1 ; i32.const 32 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 32 ]
+  running instr: i32.or
+  stack        : [ i32.const 1 ; i32.const 32 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 36
   stack        : [ i32.const 36 ]
   running instr: i32.const 1
+  stack        : [ i32.const 1 ; i32.const 36 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 36 ]
+  running instr: i32.or
   stack        : [ i32.const 1 ; i32.const 36 ]
   running instr: i32.store 
   stack        : [  ]
@@ -83,11 +107,19 @@ compiler array_make:
   stack        : [ i32.const 40 ]
   running instr: i32.const 1
   stack        : [ i32.const 1 ; i32.const 40 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 40 ]
+  running instr: i32.or
+  stack        : [ i32.const 1 ; i32.const 40 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 44
   stack        : [ i32.const 44 ]
   running instr: i32.const 1
+  stack        : [ i32.const 1 ; i32.const 44 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 44 ]
+  running instr: i32.or
   stack        : [ i32.const 1 ; i32.const 44 ]
   running instr: i32.store 
   stack        : [  ]
@@ -95,11 +127,19 @@ compiler array_make:
   stack        : [ i32.const 48 ]
   running instr: i32.const 1
   stack        : [ i32.const 1 ; i32.const 48 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 48 ]
+  running instr: i32.or
+  stack        : [ i32.const 1 ; i32.const 48 ]
   running instr: i32.store 
   stack        : [  ]
   running instr: i32.const 52
   stack        : [ i32.const 52 ]
   running instr: i32.const 1
+  stack        : [ i32.const 1 ; i32.const 52 ]
+  running instr: i32.const 0
+  stack        : [ i32.const 0 ; i32.const 1 ; i32.const 52 ]
+  running instr: i32.or
   stack        : [ i32.const 1 ; i32.const 52 ]
   running instr: i32.store 
   stack        : [  ]
