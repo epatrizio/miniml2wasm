@@ -1,0 +1,3 @@
+let x = 21 in x + x
+(* interpreted as: let x = 21 in (x + x) *)
+(* not: (let x = 21 in x) + x *)

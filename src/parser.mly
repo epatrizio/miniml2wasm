@@ -10,6 +10,7 @@
 %right EQ
 %right REFEQ
 %right ARROW
+%right IN
 %left COLON
 %left REF
 
@@ -22,7 +23,6 @@
 %nonassoc unary_op (* unary operators - administrative pseudo-token to distinguish unary minus from subtraction *)
 %nonassoc LBRACKET
 %nonassoc ELSE
-%nonassoc IN
 
 %{
 
