@@ -1,6 +1,6 @@
 let x = 42 in
 let y = 0 in
   begin
-    assert (y > 0);
+    assert y > 0;
     x / y
   end

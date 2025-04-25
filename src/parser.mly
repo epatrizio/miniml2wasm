@@ -4,9 +4,14 @@
 %token <string> NAME
 %token <Ast.cst> CST
 
-// %token UNARY_OP (* administrative token to distinguish unary minus from subtraction *)
+%right CST
+%right ASSERT
 
-%nonassoc ASSERT
+%right EQ
+%right REFEQ
+%right ARROW
+%left COLON
+%left REF
 
 %right OR
 %right AND
@@ -14,7 +19,8 @@
 %left PLUS MINUS
 %left MUL DIV
 
-%nonassoc UNARY_OP (* unary operators *)
+%nonassoc unary_op (* unary operators - administrative pseudo-token to distinguish unary minus from subtraction *)
+%nonassoc LBRACKET
 %nonassoc ELSE
 %nonassoc IN
 
@@ -27,9 +33,6 @@ open Ast
 %start prog
 
 %type <Ast.prog> prog
-// %type <Ast.expr'> expr_bis
-// %type <Ast.stmt'> stmt_bis
-// %type <Ast.ident> ident
 
 %%
 
@@ -39,7 +42,7 @@ let prog :=
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
-  | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
+  | ~ = ident; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
 
@@ -52,20 +55,20 @@ let block :=
 
 let var :=
   | ~ = ident; <Vident>
-  | ~ = ident; LBRACKET; ~ = expr; RBRACKET; <Varray>
+  | ~ = ident; ~ = delimited(LBRACKET, expr, RBRACKET); <Varray>
 
 let expr_bis :=
   | ~ = CST; <Ecst>
   | ~ = var; <Evar>
-  | ~ = unop; ~ = expr; %prec UNARY_OP <Eunop>
+  | ~ = unop; ~ = expr; %prec unary_op <Eunop>
   | e1 = expr; ~ = binop; e2 = expr; <Ebinop>
   | BEGIN; ~ = block; END; <Eblock>
   | IF; ~ = expr; THEN; e1 = expr; ELSE; e2 = expr; <Eif>
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
-  | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
-  | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
+  | ~ = delimited(LBRACKET, separated_list(COMMA, expr), RBRACKET); <Earray_init>
+  | ~ = var; ~ = delimited(LBRACKET, expr, RBRACKET); <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
@@ -83,7 +86,7 @@ let expr :=
   | expr = delimited(LPAREN, expr, RPAREN); { expr }
 
 let ident :=
-  | name = NAME; COLON; typ = typ; { (typ, name) : ident }
+  | name = NAME; typ = preceded(COLON, typ); { (typ, name) : ident }
   | name = NAME; { (Tunknown, name) : ident }
 
 %inline binop :
