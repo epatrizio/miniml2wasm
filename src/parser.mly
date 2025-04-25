@@ -42,7 +42,7 @@ let prog :=
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
-  | ~ = ident; LBRACKET; e1 = expr; RBRACKET; REFEQ; e2 = expr; <Sarrayassign>
+  | ~ = ident; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; <Sarrayassign>
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
 
@@ -55,7 +55,7 @@ let block :=
 
 let var :=
   | ~ = ident; <Vident>
-  | ~ = ident; LBRACKET; ~ = expr; RBRACKET; <Varray>
+  | ~ = ident; ~ = delimited(LBRACKET, expr, RBRACKET); <Varray>
 
 let expr_bis :=
   | ~ = CST; <Ecst>
@@ -67,8 +67,8 @@ let expr_bis :=
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
-  | LBRACKET; ~ = separated_list(COMMA, expr); RBRACKET; <Earray_init>
-  | ~ = var; LBRACKET; ~ = expr; RBRACKET; <Earray>
+  | ~ = delimited(LBRACKET, separated_list(COMMA, expr), RBRACKET); <Earray_init>
+  | ~ = var; ~ = delimited(LBRACKET, expr, RBRACKET); <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
