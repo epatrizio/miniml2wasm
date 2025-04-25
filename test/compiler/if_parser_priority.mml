@@ -1,0 +1,3 @@
+let x = 42 in if true then x else x * 2
+(* interpreted as: if true then x else (x * 2) *)
+(* not: (if true then x else x) * 2 *)

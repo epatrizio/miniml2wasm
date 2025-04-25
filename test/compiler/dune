@@ -8,6 +8,7 @@
   block.mml
   func_nothing.mml
   func.mml
+  if_parser_priority.mml
   if.mml
   let_parser_priority.mml
   matrix_bounds_1.mml
