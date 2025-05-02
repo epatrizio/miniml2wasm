@@ -97,12 +97,25 @@ and compile_var buf loc var stack_nb_elts env =
     let idx = get_var_idx buf Get loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts + 1, env)
-  | Varray ((typ, name), expr) ->
+  | Varray (Vident (typ, name), expr) ->
+    (* 1-dim array *)
     let* stack_nb_elts, env =
       compile_array_pointer buf loc name expr stack_nb_elts env
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts, env)
+  | Varray ((Varray (Vident (_, _name), _) as sub_array), expr) ->
+    (* 2-dim array *)
+    let* buf, stack_nb_elts, env =
+      compile_var buf loc sub_array stack_nb_elts env
+    in
+    let* stack_nb_elts, env =
+      compile_array_pointer_from_pt buf expr stack_nb_elts env
+    in
+    (* TODO: hard coded *)
+    write_load buf (Tarray (Ti32, 0l));
+    Ok (buf, stack_nb_elts - 1, env)
+  | Varray _ -> assert false (* only 1-dim & 2-dim array are supported *)
 
 and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
@@ -114,7 +127,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Ecst (Ci32 i32) ->
     write_i32_const_s buf i32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Evar var -> compile_var buf loc var stack_nb_elts env
+  | Evar var ->
+    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
+    Ok (buf, stack_nb_elts, env)
   | Eunop (Unot, expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
@@ -184,14 +199,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put memory array_pointer on stack for let local/global var *)
     write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray (var, expr) ->
-    (* a[idx0][idx1] var = a[idx0] = sub_array pointer -- expr = sub_array field *)
-    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
-    let* stack_nb_elts, env =
-      compile_array_pointer_from_pt buf expr stack_nb_elts env
-    in
-    write_load buf typ;
-    Ok (buf, stack_nb_elts - 1, env)
   | Earray_size (_typ, name) ->
     (* 1. get array memory pointer *)
     let idx = get_var_idx buf Get loc name env in

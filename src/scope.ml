@@ -8,10 +8,9 @@ let rec analyse_var var env =
   | Vident (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok (Vident (typ_ident, name), env)
-  | Varray ((typ_ident, name), expr) ->
-    let* name = Env.get_name name env in
-    let* expr, env = analyse_expr expr env in
-    Ok (Varray ((typ_ident, name), expr), env)
+  | Varray (var, expr) ->
+    let* var, env = analyse_var var env in
+    Ok (Varray (var, expr), env)
 
 and analyse_expr (loc, typ, expr') env =
   match expr' with
@@ -56,10 +55,6 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Earray_init el), env)
-  | Earray (var, expr) ->
-    let* var, env = analyse_var var env in
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, typ, Earray (var, expr)), env)
   | Earray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Earray_size (typ_ident, name)), env)

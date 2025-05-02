@@ -98,15 +98,15 @@ and typecheck_var loc var env =
   | Vident (_, ident_name) ->
     let* typ = Env.get_type ident_name env in
     Ok ((typ, Vident (typ, ident_name)), env)
-  | Varray ((_, ident_name), expr) ->
-    let* typ = Env.get_type ident_name env in
+  | Varray (var, expr) ->
+    let* (typ, var), env = typecheck_var loc var env in
     begin
       match typ with
       | Tarray (typ, _) ->
         let* (l1, t1, expr'), env = typecheck_expr expr env in
         begin
           match t1 with
-          | Ti32 -> Ok ((typ, Varray ((typ, ident_name), (l1, t1, expr'))), env)
+          | Ti32 -> Ok ((typ, Varray (var, (l1, t1, expr'))), env)
           | _ ->
             error loc "attempt to perform an array access with a non i32 indice"
         end
@@ -209,10 +209,6 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         let size = Int32.of_int size in
         Ok ((loc, Tarray (typ, size), Earray_init el), env)
     end
-  | Earray (var, expr) ->
-    let* (typ, var), env = typecheck_var loc var env in
-    let* expr, env = typecheck_expr expr env in
-    Ok ((loc, typ, Earray (var, expr)), env)
   | Earray_size (_, ident_name) ->
     let* ident_typ = Env.get_type ident_name env in
     begin
