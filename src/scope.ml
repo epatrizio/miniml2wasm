@@ -10,6 +10,7 @@ let rec analyse_var var env =
     Ok (Vident (typ_ident, name), env)
   | Varray (var, expr) ->
     let* var, env = analyse_var var env in
+    let* expr, env = analyse_expr expr env in
     Ok (Varray (var, expr), env)
 
 and analyse_expr (loc, typ, expr') env =
@@ -125,11 +126,10 @@ and analyse_stmt (loc, stmt') env =
     let* expr, env = analyse_expr expr env in
     let* name = Env.get_name name env in
     Ok ((loc, Srefassign ((typ_ident, name), expr)), env)
-  | Sarrayassign (var, e1, e2) ->
+  | Sarrayassign (var, expr) ->
     let* var, env = analyse_var var env in
-    let* e1, env = analyse_expr e1 env in
-    let* e2, env = analyse_expr e2 env in
-    Ok ((loc, Sarrayassign (var, e1, e2)), env)
+    let* expr, env = analyse_expr expr env in
+    Ok ((loc, Sarrayassign (var, expr)), env)
   | Swhile (expr, block) ->
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in

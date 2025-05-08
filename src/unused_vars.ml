@@ -122,10 +122,9 @@ and analyse_stmt (_loc, stmt') vars_use =
   | Srefassign ((_typ_ident, name), expr) ->
     let* vars_use = analyse_expr expr vars_use in
     use_var name vars_use
-  | Sarrayassign (var, e1, e2) ->
+  | Sarrayassign (var, expr) ->
     let* vars_use = analyse_var var vars_use in
-    let* vars_use = analyse_expr e1 vars_use in
-    analyse_expr e2 vars_use
+    analyse_expr expr vars_use
   | Swhile (expr, block) ->
     let* vars_use = analyse_expr expr vars_use in
     analyse_block block vars_use

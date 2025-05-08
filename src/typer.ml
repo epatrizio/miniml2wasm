@@ -392,37 +392,12 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
-  | Sarrayassign (var, _e1, _e2) ->
-    let* (_typ, _var), _env = typecheck_var loc var env in
-    assert false
-    (* let* ident_typ = Env.get_type ident_name env in *)
-    (* begin
-      match ident_typ with
-      | Tarray (ident_typ, _) ->
-        let* (l1, t1, e1'), env = typecheck_expr e1 env in
-        begin
-          match t1 with
-          | Ti32 ->
-            let* (l2, t2, e2'), env = typecheck_expr e2 env in
-            begin
-              match t2 with
-              | t2 when ident_typ = t2 ->
-                Ok
-                  ( ( loc
-                    , Sarrayassign
-                        ((ident_typ, ident_name), (l1, t1, e1'), (l2, t2, e2'))
-                    )
-                  , env )
-              | _ ->
-                error loc
-                  "attempt to perform an array assignment with different types"
-            end
-          | _ ->
-            error loc "attempt to perform an array access with a non i32 indice"
-        end
-      | _ ->
-        error loc "attempt to perform an array assignment on a non array var"
-    end *)
+  | Sarrayassign (var, expr) ->
+    let* (var_typ, var), _env = typecheck_var loc var env in
+    let* (l, expr_typ, expr'), env = typecheck_expr expr env in
+    if var_typ = expr_typ then
+      Ok ((loc, Sarrayassign (var, (l, expr_typ, expr'))), env)
+    else error loc "attempt to perform an array assignment with different types"
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin

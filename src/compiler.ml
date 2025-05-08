@@ -301,15 +301,15 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let idx = get_var_idx buf Set loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts - 1, env)
-  | Estmt (_loc, Sarrayassign (_var, _e1, _e2)) ->
-    assert false
-    (* let* stack_nb_elts, env =
+  | Estmt (loc, Sarrayassign (Varray (Vident (typ, name), e1), e2)) ->
+    let* stack_nb_elts, env =
       compile_array_pointer buf loc name e1 stack_nb_elts env
     in
     let* e2_buf, stack_nb_elts, env = compile_expr e2 stack_nb_elts env in
     Buffer.add_buffer buf e2_buf;
     write_store buf typ;
-    Ok (buf, stack_nb_elts - 2, env) *)
+    Ok (buf, stack_nb_elts - 2, env)
+  | Estmt (_loc, Sarrayassign (_, _expr)) -> assert false
   | Estmt (_loc, Swhile (cond_expr, block)) ->
     let* cond_expr_buf, stack_nb_elts, env =
       compile_expr cond_expr stack_nb_elts env

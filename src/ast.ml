@@ -70,7 +70,7 @@ and stmt = location * stmt'
 and stmt' =
   | Slet of ident * expr
   | Srefassign of ident * expr
-  | Sarrayassign of var * expr * expr
+  | Sarrayassign of var * expr
   | Swhile of expr * block
   | Sassert of expr
   | Sunreachable
@@ -192,8 +192,8 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|%a := %a|}
       (print_ident ~typ_display:false)
       ident print_expr expr
-  | Sarrayassign (var, e1, e2) ->
-    fprintf fmt {|%a[%a] := %a|} print_var var print_expr e1 print_expr e2
+  | Sarrayassign (var, expr) ->
+    fprintf fmt {|%a := %a|} print_var var print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr

@@ -42,7 +42,12 @@ let prog :=
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
   | ~ = ident; REFEQ; ~ = expr; <Srefassign>
-  | ~ = var; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; <Sarrayassign>
+  | var = var; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; {
+    match var with
+    | Vident _ident as vi -> Sarrayassign (Varray (vi, e1), e2)
+    | Varray (Vident _ident, _e) as va -> Sarrayassign (Varray (va, e1), e2)
+    | _ -> assert false (* only 1-dim & 2-dim array are supported *)
+  }
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
 
