@@ -380,23 +380,24 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
     end
-  | Srefassign ((_, ident_name), expr) ->
+  | Sassign (Vident (_, ident_name), expr) ->
     let* ident_typ = Env.get_type ident_name env in
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
       | Tref typ, typ_e when typ = typ_e ->
         Ok
-          ( (loc, Srefassign ((ident_typ, ident_name), (loc_e, typ_e, expr')))
+          ( ( loc
+            , Sassign (Vident (ident_typ, ident_name), (loc_e, typ_e, expr')) )
           , env )
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
-  | Sarrayassign (var, expr) ->
+  | Sassign ((Varray (_, _) as var), expr) ->
     let* (var_typ, var), _env = typecheck_var loc var env in
     let* (l, expr_typ, expr'), env = typecheck_expr expr env in
     if var_typ = expr_typ then
-      Ok ((loc, Sarrayassign (var, (l, expr_typ, expr'))), env)
+      Ok ((loc, Sassign (var, (l, expr_typ, expr'))), env)
     else error loc "attempt to perform an array assignment with different types"
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
