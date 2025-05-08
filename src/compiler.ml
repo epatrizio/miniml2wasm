@@ -104,7 +104,7 @@ and compile_var buf loc var stack_nb_elts env =
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts, env)
-  | Varray ((Varray (Vident (_, _name), _) as sub_array), expr) ->
+  | Varray ((Varray (Vident (typ, _), _) as sub_array), expr) ->
     (* 2-dim array *)
     let* buf, stack_nb_elts, env =
       compile_var buf loc sub_array stack_nb_elts env
@@ -112,8 +112,7 @@ and compile_var buf loc var stack_nb_elts env =
     let* stack_nb_elts, env =
       compile_array_pointer_from_pt buf expr stack_nb_elts env
     in
-    (* TODO: hard coded *)
-    write_load buf (Tarray (Ti32, 0l));
+    write_load buf typ;
     Ok (buf, stack_nb_elts - 1, env)
   | Varray _ -> assert false (* only 1-dim & 2-dim array are supported *)
 
@@ -302,6 +301,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts - 1, env)
   | Estmt (loc, Sarrayassign (Varray (Vident (typ, name), e1), e2)) ->
+    (* 1-dim array *)
     let* stack_nb_elts, env =
       compile_array_pointer buf loc name e1 stack_nb_elts env
     in
@@ -309,7 +309,23 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf e2_buf;
     write_store buf typ;
     Ok (buf, stack_nb_elts - 2, env)
-  | Estmt (_loc, Sarrayassign (_, _expr)) -> assert false
+  | Estmt
+      ( _loc
+      , Sarrayassign
+          (Varray ((Varray (Vident (typ, _), _) as sub_array), e2), e3) ) ->
+    (* 2-dim array *)
+    let* buf, stack_nb_elts, env =
+      compile_var buf loc sub_array stack_nb_elts env
+    in
+    let* stack_nb_elts, env =
+      compile_array_pointer_from_pt buf e2 stack_nb_elts env
+    in
+    let* e3_buf, stack_nb_elts, env = compile_expr e3 stack_nb_elts env in
+    Buffer.add_buffer buf e3_buf;
+    write_store buf typ;
+    Ok (buf, stack_nb_elts - 3, env)
+  | Estmt (_loc, Sarrayassign (_, _)) ->
+    assert false (* only 1-dim & 2-dim array are supported *)
   | Estmt (_loc, Swhile (cond_expr, block)) ->
     let* cond_expr_buf, stack_nb_elts, env =
       compile_expr cond_expr stack_nb_elts env
