@@ -63,7 +63,7 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
 and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
   (* 0. out of bounds array access control *)
   (*    insert assert stmt code: array size > array index *)
-  let array_size_expr = (loc, Ti32, Earray_size (Tunknown, name)) in
+  let array_size_expr = (loc, Ti32, Earray_size (Vident (Tunknown, name))) in
   let assert_stmt =
     Sassert (loc, Tbool, Ebinop (array_size_expr, Bgt, idx_expr))
   in
@@ -198,15 +198,14 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put memory array_pointer on stack for let local/global var *)
     write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray_size (_typ, name) ->
+  | Earray_size var ->
     (* 1. get array memory pointer *)
-    let idx = get_var_idx buf Get loc name env in
-    write_u32_of_int buf idx;
+    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
     (* 2. size = 2nd meta data *)
     write_i32_const_u buf 4l;
     write_binop buf Badd;
     write_load buf Ti32;
-    Ok (buf, stack_nb_elts + 1, env)
+    Ok (buf, stack_nb_elts, env)
   | Earray_make (Ci32 size, expr_init) ->
     let size = Int32.to_int size in
     let el = List.init size (fun _ -> expr_init) in

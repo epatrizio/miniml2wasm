@@ -209,11 +209,11 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         let size = Int32.of_int size in
         Ok ((loc, Tarray (typ, size), Earray_init el), env)
     end
-  | Earray_size (_, ident_name) ->
-    let* ident_typ = Env.get_type ident_name env in
+  | Earray_size var ->
+    let* (typ, var), env = typecheck_var loc var env in
     begin
-      match ident_typ with
-      | Tarray _ -> Ok ((loc, Ti32, Earray_size (ident_typ, ident_name)), env)
+      match typ with
+      | Tarray _ -> Ok ((loc, Ti32, Earray_size var), env)
       | _ ->
         error loc "attempt to perform an array_size call on a non array var"
     end

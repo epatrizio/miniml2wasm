@@ -73,7 +73,7 @@ let expr_bis :=
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
   | ~ = delimited(LBRACKET, separated_list(COMMA, expr), RBRACKET); <Earray_init>
-  | ARRAY_SIZE; ~ = ident; <Earray_size>
+  | ARRAY_SIZE; ~ = var; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {

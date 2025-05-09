@@ -51,9 +51,9 @@ and expr' =
   | Eif of expr * expr * expr
   | Elet of ident * expr * expr
   | Eref of expr
-  | Ederef of ident (* TODO: var ? *)
+  | Ederef of ident
   | Earray_init of expr list
-  | Earray_size of ident
+  | Earray_size of var
   | Earray_make of cst * expr
   | Earray_matrix_make of cst * cst * expr
   | Efun_init of bool * ident list * typ * block
@@ -153,8 +153,7 @@ and print_expr fmt (_, _, expr) =
   | Eref e -> fprintf fmt {|ref %a|} print_expr e
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
-  | Earray_size ident ->
-    fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
+  | Earray_size var -> fprintf fmt {|array_size %a|} print_var var
   | Earray_make (cst_size, expr_init) ->
     fprintf fmt {|array_make %a %a|} print_cst cst_size print_expr expr_init
   | Earray_matrix_make (cst_size_x, cst_size_y, expr_init) ->

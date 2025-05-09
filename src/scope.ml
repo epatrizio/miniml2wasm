@@ -56,9 +56,9 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Earray_init el), env)
-  | Earray_size (typ_ident, name) ->
-    let* name = Env.get_name name env in
-    Ok ((loc, typ, Earray_size (typ_ident, name)), env)
+  | Earray_size var ->
+    let* var, env = analyse_var var env in
+    Ok ((loc, typ, Earray_size var), env)
   | Earray_make (cst_size, expr_init) ->
     let* expr_init, env = analyse_expr expr_init env in
     Ok ((loc, typ, Earray_make (cst_size, expr_init)), env)
