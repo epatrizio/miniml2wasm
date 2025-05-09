@@ -12,6 +12,7 @@
   if.mml
   let_parser_priority.mml
   matrix_bounds_1.mml
+  matrix_bounds_2.mml
   matrix_make.mml
   matrix.mml
   unused_vars.mml

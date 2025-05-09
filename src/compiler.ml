@@ -61,16 +61,6 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
   | _ -> assert false
 
 and compile_array_pointer buf loc name idx_expr stack_nb_elts env =
-  (* 0. out of bounds array access control *)
-  (*    insert assert stmt code: array size > array index *)
-  let array_size_expr = (loc, Ti32, Earray_size (Vident (Tunknown, name))) in
-  let assert_stmt =
-    Sassert (loc, Tbool, Ebinop (array_size_expr, Bgt, idx_expr))
-  in
-  let* assert_expr_buf, stack_nb_elts, env =
-    compile_expr (loc, Tunit, Estmt (loc, assert_stmt)) stack_nb_elts env
-  in
-  Buffer.add_buffer buf assert_expr_buf;
   (* 1. get array memory pointer *)
   let idx = get_var_idx buf Get loc name env in
   write_u32_of_int buf idx;
@@ -92,6 +82,19 @@ and compile_array_pointer_from_pt buf idx_expr stack_nb_elts env =
   Ok (stack_nb_elts, env)
 
 and compile_var buf loc var stack_nb_elts env =
+  let out_of_bounds_array_access_control buf array_var idx_expr stack_nb_elts
+    env =
+    (* insert assert stmt code: array size > array index *)
+    let array_size_expr = (loc, Ti32, Earray_size array_var) in
+    let assert_stmt =
+      Sassert (loc, Tbool, Ebinop (array_size_expr, Bgt, idx_expr))
+    in
+    let* assert_expr_buf, stack_nb_elts, env =
+      compile_expr (loc, Tunit, Estmt (loc, assert_stmt)) stack_nb_elts env
+    in
+    Buffer.add_buffer buf assert_expr_buf;
+    Ok (stack_nb_elts, env)
+  in
   match var with
   | Vident (_typ, name) ->
     let idx = get_var_idx buf Get loc name env in
@@ -100,12 +103,20 @@ and compile_var buf loc var stack_nb_elts env =
   | Varray (Vident (typ, name), expr) ->
     (* 1-dim array *)
     let* stack_nb_elts, env =
+      out_of_bounds_array_access_control buf
+        (Vident (Tunknown, name))
+        expr stack_nb_elts env
+    in
+    let* stack_nb_elts, env =
       compile_array_pointer buf loc name expr stack_nb_elts env
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts, env)
   | Varray ((Varray (Vident (typ, _), _) as sub_array), expr) ->
     (* 2-dim array *)
+    let* stack_nb_elts, env =
+      out_of_bounds_array_access_control buf sub_array expr stack_nb_elts env
+    in
     let* buf, stack_nb_elts, env =
       compile_var buf loc sub_array stack_nb_elts env
     in
