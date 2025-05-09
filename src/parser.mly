@@ -63,6 +63,7 @@ let var :=
   | ~ = var; ~ = delimited(LBRACKET, expr, RBRACKET); <Varray>
 
 let expr_bis :=
+  | LPAREN; RPAREN; { Ecst Cunit }
   | ~ = CST; <Ecst>
   | ~ = var; <Evar>
   | ~ = unop; ~ = expr; %prec unary_op <Eunop>

@@ -1,9 +1,9 @@
 let print_i32 : i32 -> unit = import fun(i32) : unit;
-let read_i32 : unit -> i32 = import fun( ) : i32;
+let read_i32 : unit -> i32 = import fun() : i32;
 let compute : i32 -> i32 = import fun (i32) : i32;
 let x : i32 ref = ref 0 in
   while true do
-    x := read_i32( );
+    x := read_i32();
     x := compute(!x);
     print_i32(!x)
   done

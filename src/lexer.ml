@@ -16,8 +16,6 @@ let blank = [%sedlex.regexp? ' ' | '\t']
 
 let newline = [%sedlex.regexp? '\r' | '\n' | "\r\n"]
 
-let unit = [%sedlex.regexp? "()"]
-
 let boolean = [%sedlex.regexp? "true" | "false"]
 
 let integer = [%sedlex.regexp? Plus digit]
@@ -26,7 +24,6 @@ let rec token buf =
   match%sedlex buf with
   | Plus (Chars " \t") -> token buf
   | newline -> token buf
-  | unit -> CST Cunit
   | boolean -> CST (Cbool (bool_of_string (Sedlexing.Utf8.lexeme buf)))
   | integer ->
     CST (Ci32 (Int32.of_int (int_of_string (Sedlexing.Utf8.lexeme buf))))
