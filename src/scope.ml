@@ -8,10 +8,10 @@ let rec analyse_var var env =
   | Vident (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok (Vident (typ_ident, name), env)
-  | Varray ((typ_ident, name), expr) ->
-    let* name = Env.get_name name env in
+  | Varray (var, expr) ->
+    let* var, env = analyse_var var env in
     let* expr, env = analyse_expr expr env in
-    Ok (Varray ((typ_ident, name), expr), env)
+    Ok (Varray (var, expr), env)
 
 and analyse_expr (loc, typ, expr') env =
   match expr' with
@@ -56,10 +56,6 @@ and analyse_expr (loc, typ, expr') env =
         ([], env) el
     in
     Ok ((loc, typ, Earray_init el), env)
-  | Earray (var, expr) ->
-    let* var, env = analyse_var var env in
-    let* expr, env = analyse_expr expr env in
-    Ok ((loc, typ, Earray (var, expr)), env)
   | Earray_size (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Earray_size (typ_ident, name)), env)
@@ -126,15 +122,10 @@ and analyse_stmt (loc, stmt') env =
         let* fresh_name, env = Env.add_global name env in
         Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
     end
-  | Srefassign ((typ_ident, name), expr) ->
+  | Sassign (var, expr) ->
+    let* var, env = analyse_var var env in
     let* expr, env = analyse_expr expr env in
-    let* name = Env.get_name name env in
-    Ok ((loc, Srefassign ((typ_ident, name), expr)), env)
-  | Sarrayassign ((typ_ident, name), e1, e2) ->
-    let* e1, env = analyse_expr e1 env in
-    let* e2, env = analyse_expr e2 env in
-    let* name = Env.get_name name env in
-    Ok ((loc, Sarrayassign ((typ_ident, name), e1, e2)), env)
+    Ok ((loc, Sassign (var, expr)), env)
   | Swhile (expr, block) ->
     let* expr, env = analyse_expr expr env in
     let* block, env = analyse_block block env in

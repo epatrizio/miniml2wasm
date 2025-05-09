@@ -41,8 +41,13 @@ let prog :=
 
 let stmt_bis :=
   | LET; ~ = ident; EQ; ~ = expr; <Slet>
-  | ~ = ident; REFEQ; ~ = expr; <Srefassign>
-  | ~ = ident; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; <Sarrayassign>
+  | i = ident; REFEQ; e = expr; { Sassign (Vident i, e) }
+  | var = var; e1 = delimited(LBRACKET, expr, RBRACKET); REFEQ; e2 = expr; {
+    match var with
+    | Vident _ident as vi -> Sassign (Varray (vi, e1), e2)
+    | Varray (Vident _ident, _e) as va -> Sassign (Varray (va, e1), e2)
+    | _ -> assert false (* only 1-dim & 2-dim array are supported *)
+  }
   | WHILE; ~ = expr; DO; ~ = block; DONE; <Swhile>
   | ASSERT; ~ = expr; <Sassert>
 
@@ -55,7 +60,7 @@ let block :=
 
 let var :=
   | ~ = ident; <Vident>
-  | ~ = ident; ~ = delimited(LBRACKET, expr, RBRACKET); <Varray>
+  | ~ = var; ~ = delimited(LBRACKET, expr, RBRACKET); <Varray>
 
 let expr_bis :=
   | ~ = CST; <Ecst>
@@ -68,7 +73,6 @@ let expr_bis :=
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
   | ~ = delimited(LBRACKET, separated_list(COMMA, expr), RBRACKET); <Earray_init>
-  | ~ = var; ~ = delimited(LBRACKET, expr, RBRACKET); <Earray>
   | ARRAY_SIZE; ~ = ident; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>

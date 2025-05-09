@@ -51,8 +51,8 @@ let empty () =
 let rec analyse_var var vars_use =
   match var with
   | Vident (_typ_ident, name) -> use_var name vars_use
-  | Varray ((_typ_ident, name), expr) ->
-    let* vars_use = use_var name vars_use in
+  | Varray (var, expr) ->
+    let* vars_use = analyse_var var vars_use in
     analyse_expr expr vars_use
 
 and analyse_expr (_loc, _typ, expr') vars_use =
@@ -83,9 +83,6 @@ and analyse_expr (_loc, _typ, expr') vars_use =
         vars_use el
     in
     Ok vars_use
-  | Earray (var, expr) ->
-    let* vars_use = analyse_var var vars_use in
-    analyse_expr expr vars_use
   | Earray_size (_typ_ident, name) -> use_var name vars_use
   | Earray_make (_cst_size, expr_init) -> analyse_expr expr_init vars_use
   | Earray_matrix_make (_cst_size_x, _cst_size_y, expr_init) ->
@@ -122,13 +119,9 @@ and analyse_stmt (_loc, stmt') vars_use =
   | Slet ((_typ_ident, name), expr) ->
     let* vars_use = analyse_expr expr vars_use in
     Ok (add_global name vars_use)
-  | Srefassign ((_typ_ident, name), expr) ->
-    let* vars_use = analyse_expr expr vars_use in
-    use_var name vars_use
-  | Sarrayassign ((_typ_ident, name), e1, e2) ->
-    let* vars_use = analyse_expr e1 vars_use in
-    let* vars_use = analyse_expr e2 vars_use in
-    use_var name vars_use
+  | Sassign (var, expr) ->
+    let* vars_use = analyse_var var vars_use in
+    analyse_expr expr vars_use
   | Swhile (expr, block) ->
     let* vars_use = analyse_expr expr vars_use in
     analyse_block block vars_use

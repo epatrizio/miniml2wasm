@@ -98,15 +98,15 @@ and typecheck_var loc var env =
   | Vident (_, ident_name) ->
     let* typ = Env.get_type ident_name env in
     Ok ((typ, Vident (typ, ident_name)), env)
-  | Varray ((_, ident_name), expr) ->
-    let* typ = Env.get_type ident_name env in
+  | Varray (var, expr) ->
+    let* (typ, var), env = typecheck_var loc var env in
     begin
       match typ with
       | Tarray (typ, _) ->
         let* (l1, t1, expr'), env = typecheck_expr expr env in
         begin
           match t1 with
-          | Ti32 -> Ok ((typ, Varray ((typ, ident_name), (l1, t1, expr'))), env)
+          | Ti32 -> Ok ((typ, Varray (var, (l1, t1, expr'))), env)
           | _ ->
             error loc "attempt to perform an array access with a non i32 indice"
         end
@@ -209,10 +209,6 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         let size = Int32.of_int size in
         Ok ((loc, Tarray (typ, size), Earray_init el), env)
     end
-  | Earray (var, expr) ->
-    let* (typ, var), env = typecheck_var loc var env in
-    let* expr, env = typecheck_expr expr env in
-    Ok ((loc, typ, Earray (var, expr)), env)
   | Earray_size (_, ident_name) ->
     let* ident_typ = Env.get_type ident_name env in
     begin
@@ -384,47 +380,25 @@ and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
         Ok ((loc, Slet ((typ_e, ident_name), (loc_e, typ_e, e'))), env)
       | _ -> error loc "attempt to perform an assignment with different types"
     end
-  | Srefassign ((_, ident_name), expr) ->
+  | Sassign (Vident (_, ident_name), expr) ->
     let* ident_typ = Env.get_type ident_name env in
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
       | Tref typ, typ_e when typ = typ_e ->
         Ok
-          ( (loc, Srefassign ((ident_typ, ident_name), (loc_e, typ_e, expr')))
+          ( ( loc
+            , Sassign (Vident (ident_typ, ident_name), (loc_e, typ_e, expr')) )
           , env )
       | _ ->
         error loc "attempt to perform a ref assignment with different types"
     end
-  | Sarrayassign ((_, ident_name), e1, e2) ->
-    let* ident_typ = Env.get_type ident_name env in
-    begin
-      match ident_typ with
-      | Tarray (ident_typ, _) ->
-        let* (l1, t1, e1'), env = typecheck_expr e1 env in
-        begin
-          match t1 with
-          | Ti32 ->
-            let* (l2, t2, e2'), env = typecheck_expr e2 env in
-            begin
-              match t2 with
-              | t2 when ident_typ = t2 ->
-                Ok
-                  ( ( loc
-                    , Sarrayassign
-                        ((ident_typ, ident_name), (l1, t1, e1'), (l2, t2, e2'))
-                    )
-                  , env )
-              | _ ->
-                error loc
-                  "attempt to perform an array assignment with different types"
-            end
-          | _ ->
-            error loc "attempt to perform an array access with a non i32 indice"
-        end
-      | _ ->
-        error loc "attempt to perform an array assignment on a non array var"
-    end
+  | Sassign ((Varray (_, _) as var), expr) ->
+    let* (var_typ, var), _env = typecheck_var loc var env in
+    let* (l, expr_typ, expr'), env = typecheck_expr expr env in
+    if var_typ = expr_typ then
+      Ok ((loc, Sassign (var, (l, expr_typ, expr'))), env)
+    else error loc "attempt to perform an array assignment with different types"
   | Swhile (expr, block) ->
     let* (loc_e, typ_e, expr'), env = typecheck_expr expr env in
     begin

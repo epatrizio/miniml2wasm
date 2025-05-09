@@ -40,7 +40,7 @@ type expr = location * typ * expr'
 
 and var =
   | Vident of ident
-  | Varray of ident * expr
+  | Varray of var * expr
 
 and expr' =
   | Ecst of cst
@@ -53,7 +53,6 @@ and expr' =
   | Eref of expr
   | Ederef of ident (* TODO: var ? *)
   | Earray_init of expr list
-  | Earray of var * expr
   | Earray_size of ident
   | Earray_make of cst * expr
   | Earray_matrix_make of cst * cst * expr
@@ -70,8 +69,7 @@ and stmt = location * stmt'
 
 and stmt' =
   | Slet of ident * expr
-  | Srefassign of ident * expr
-  | Sarrayassign of ident * expr * expr
+  | Sassign of var * expr
   | Swhile of expr * block
   | Sassert of expr
   | Sunreachable
@@ -135,10 +133,7 @@ let print_cst fmt = function
 
 let rec print_var fmt = function
   | Vident ident -> print_ident fmt ident
-  | Varray (ident, expr) ->
-    fprintf fmt {|%a[%a]|}
-      (print_ident ~typ_display:false)
-      ident print_expr expr
+  | Varray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
 
 and print_expr fmt (_, _, expr) =
   match expr with
@@ -158,7 +153,6 @@ and print_expr fmt (_, _, expr) =
   | Eref e -> fprintf fmt {|ref %a|} print_expr e
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
-  | Earray (var, expr) -> fprintf fmt {|%a[%a]|} print_var var print_expr expr
   | Earray_size ident ->
     fprintf fmt {|array_size %a|} (print_ident ~typ_display:false) ident
   | Earray_make (cst_size, expr_init) ->
@@ -193,14 +187,8 @@ and print_stmt fmt (_, stmt) =
     fprintf fmt {|let %a = %a|}
       (print_ident ~typ_display:true)
       ident print_expr expr
-  | Srefassign (ident, expr) ->
-    fprintf fmt {|%a := %a|}
-      (print_ident ~typ_display:false)
-      ident print_expr expr
-  | Sarrayassign (ident, e1, e2) ->
-    fprintf fmt {|%a[%a] := %a|}
-      (print_ident ~typ_display:false)
-      ident print_expr e1 print_expr e2
+  | Sassign (var, expr) ->
+    fprintf fmt {|%a := %a|} print_var var print_expr expr
   | Swhile (expr, block) ->
     fprintf fmt {|while %a do %a done|} print_expr expr print_block block
   | Sassert expr -> fprintf fmt {|assert %a|} print_expr expr

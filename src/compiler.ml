@@ -97,12 +97,24 @@ and compile_var buf loc var stack_nb_elts env =
     let idx = get_var_idx buf Get loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts + 1, env)
-  | Varray ((typ, name), expr) ->
+  | Varray (Vident (typ, name), expr) ->
+    (* 1-dim array *)
     let* stack_nb_elts, env =
       compile_array_pointer buf loc name expr stack_nb_elts env
     in
     write_load buf typ;
     Ok (buf, stack_nb_elts, env)
+  | Varray ((Varray (Vident (typ, _), _) as sub_array), expr) ->
+    (* 2-dim array *)
+    let* buf, stack_nb_elts, env =
+      compile_var buf loc sub_array stack_nb_elts env
+    in
+    let* stack_nb_elts, env =
+      compile_array_pointer_from_pt buf expr stack_nb_elts env
+    in
+    write_load buf typ;
+    Ok (buf, stack_nb_elts - 1, env)
+  | Varray _ -> assert false (* only 1-dim & 2-dim array are supported *)
 
 and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
@@ -114,7 +126,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Ecst (Ci32 i32) ->
     write_i32_const_s buf i32;
     Ok (buf, stack_nb_elts + 1, env)
-  | Evar var -> compile_var buf loc var stack_nb_elts env
+  | Evar var ->
+    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
+    Ok (buf, stack_nb_elts, env)
   | Eunop (Unot, expr) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
@@ -184,14 +198,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* put memory array_pointer on stack for let local/global var *)
     write_i32_const_u buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
-  | Earray (var, expr) ->
-    (* a[idx0][idx1] var = a[idx0] = sub_array pointer -- expr = sub_array field *)
-    let* buf, stack_nb_elts, env = compile_var buf loc var stack_nb_elts env in
-    let* stack_nb_elts, env =
-      compile_array_pointer_from_pt buf expr stack_nb_elts env
-    in
-    write_load buf typ;
-    Ok (buf, stack_nb_elts - 1, env)
   | Earray_size (_typ, name) ->
     (* 1. get array memory pointer *)
     let idx = get_var_idx buf Get loc name env in
@@ -288,13 +294,14 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer global_buf expr_buf;
     let env = Env.add_global_wasm name global_buf env in
     Ok (buf, stack_nb_elts, env)
-  | Estmt (loc, Srefassign ((_typ, name), expr)) ->
+  | Estmt (loc, Sassign (Vident (_typ, name), expr)) ->
     let* expr_buf, stack_nb_elts, env = compile_expr expr stack_nb_elts env in
     Buffer.add_buffer buf expr_buf;
     let idx = get_var_idx buf Set loc name env in
     write_u32_of_int buf idx;
     Ok (buf, stack_nb_elts - 1, env)
-  | Estmt (loc, Sarrayassign ((typ, name), e1, e2)) ->
+  | Estmt (loc, Sassign (Varray (Vident (typ, name), e1), e2)) ->
+    (* 1-dim array *)
     let* stack_nb_elts, env =
       compile_array_pointer buf loc name e1 stack_nb_elts env
     in
@@ -302,6 +309,23 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf e2_buf;
     write_store buf typ;
     Ok (buf, stack_nb_elts - 2, env)
+  | Estmt
+      ( _loc
+      , Sassign (Varray ((Varray (Vident (typ, _), _) as sub_array), e2), e3) )
+    ->
+    (* 2-dim array *)
+    let* buf, stack_nb_elts, env =
+      compile_var buf loc sub_array stack_nb_elts env
+    in
+    let* stack_nb_elts, env =
+      compile_array_pointer_from_pt buf e2 stack_nb_elts env
+    in
+    let* e3_buf, stack_nb_elts, env = compile_expr e3 stack_nb_elts env in
+    Buffer.add_buffer buf e3_buf;
+    write_store buf typ;
+    Ok (buf, stack_nb_elts - 3, env)
+  | Estmt (_loc, Sassign (_, _)) ->
+    assert false (* only 1-dim & 2-dim array are supported *)
   | Estmt (_loc, Swhile (cond_expr, block)) ->
     let* cond_expr_buf, stack_nb_elts, env =
       compile_expr cond_expr stack_nb_elts env

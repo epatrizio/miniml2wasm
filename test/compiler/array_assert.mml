@@ -1,5 +1,6 @@
-let arr = [0,1,2,3,42] in
+let arr = [0,1,2,3,4] in
   begin
     assert ((array_size arr) == 5);
+    arr[4] := 42;
     arr[4]
   end

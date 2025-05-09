@@ -1,3 +1,9 @@
 (* 2-dimensional matrix *)
-let arr = [[1,11,111],[2,22,222]] in
-  (-arr[0][2] + arr[1][2]) (* -111 + 222 = 111 *)
+let arr = [[1,11,0],[2,22,0]] in
+  begin
+    assert ((array_size arr) == 2);
+    (*assert ((array_size arr[0]) == 3);*)
+    arr[0][2] := 111;
+    arr[1][2] := 222;
+    (-arr[0][2] + arr[1][2]) (* -111 + 222 = 111 *)
+  end
