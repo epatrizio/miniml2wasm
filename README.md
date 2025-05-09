@@ -74,6 +74,7 @@ let array : bool[2] = [true,true] in
 (* matrix construct: direct or with matrix_make primitive function *)
 (* Warning: matrix_make x y default_val produces an i32[y][x] *)
 (*          i32[y] must be seen as the array[x] first dim elements type *)
+(*            (i32[y])[x] - elt_type[size] *)
 (* let matrix : i32[2][3] = matrix_make 3 2 0 in *)
 let matrix : i32[2][3] = [[0,0],[0,0],[0,0]] in
   begin  (* block *)
@@ -85,6 +86,8 @@ let matrix : i32[2][3] = [[0,0],[0,0],[0,0]] in
       z := array_size array;
       (* array col assign *)
       array[0] := false;
+      (* matrix field assign *)
+      matrix[2][1] := 42;
       (* if-cond must be in bool type *)
       (* !z : dereference z var *)
       if not true then print_i32(!z)
