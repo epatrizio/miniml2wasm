@@ -1,0 +1,36 @@
+(* https://github.com/epatrizio/miniml2wasm/issues/19 *)
+
+let double_array_orig = fun(arr : i32[3]) {
+  let arr_res = [0,0,0] in
+  let idx : i32 ref = ref 0 in
+    begin
+      while !idx < 3 do
+        arr_res[!idx] := arr[!idx] * 2;
+        idx := !idx + 1
+      done;
+      arr_res
+    end
+};
+
+let double_array = fun(arr : i32[3]) {
+  let idx : i32 ref = ref 0 in
+    begin
+      while !idx < 3 do
+        arr[!idx] := arr[!idx] * 2;
+        idx := !idx + 1
+      done;
+      arr
+    end
+};
+
+let arr = double_array([10,20,30]) in (* OK *)
+(*let arr = double_array_orig([10,20,30]) in*) (* KO!! *)
+let idx : i32 ref = ref 0 in
+let sum : i32 ref = ref 0 in
+  begin
+    while !idx < 3 do
+      sum := !sum + arr[!idx];
+      idx := !idx + 1
+    done;
+    !sum  (* 120 *)
+  end

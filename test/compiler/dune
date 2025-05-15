@@ -6,6 +6,7 @@
   array.mml
   assert.mml
   block.mml
+  func_array.mml
   func_nothing.mml
   func.mml
   if_parser_priority.mml

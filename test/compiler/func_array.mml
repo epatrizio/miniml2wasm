@@ -1,4 +1,33 @@
+(* basics: i32[3] -> i32[3] *)
+let identity_array = fun(arr : i32[3]) { arr };
+
+(* i32[3] -> i32 - sum of array elts *)
+let sum_array = fun(arr : i32[3]) {
+  let arr_size = (array_size arr) in
+  let res : i32 ref = ref 0 in
+  let idx : i32 ref = ref 0 in
+    begin
+      assert arr_size == 3;
+      while !idx < arr_size do
+        res := !res + arr[!idx];
+        idx := !idx + 1
+      done;
+      !res
+    end
+};
+
+(* i32 -> i32 *)
 let double = fun(a : i32) { a * 2 };
+
+(* i32[3] -> i32[3] *)
+let double_array_basic = fun(arr : i32[3]) {
+  arr[0] := double(arr[0]);
+  arr[1] := double(arr[1]);
+  arr[2] := double(arr[2]);
+  arr
+};
+
+(* i32[3] -> i32[3] *)
 let double_array = fun(arr : i32[3]) {
   let arr_res = [0,0,0] in
   let arr_size = (array_size arr) in
@@ -12,16 +41,8 @@ let double_array = fun(arr : i32[3]) {
     end
 };
 
-(*let arr0 = [1,2] in*)
 let arr = [10,20,30] in
+let arr = identity_array([10,20,30]) in
 let arr = double_array(arr) in (* [20,40,60] *)
-let arr_size = (array_size arr) in
-let idx : i32 ref = ref 0 in
-let sum : i32 ref = ref 0 in
-  begin
-    while !idx < arr_size do
-      sum := !sum + arr[!idx];
-      idx := !idx + 1
-    done;
-    !sum  (* 120 *)
-  end
+let arr = double_array_basic(arr) in (* [40,80,120] *)
+sum_array(arr)  (* 240 *)
