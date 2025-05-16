@@ -1,6 +1,7 @@
 type t =
-  { previous_pointer : int32
-  ; pointer : int32
+  { previous_pointer : Int32.t
+  ; pointer : Int32.t
+  ; pages : Int32.t
   }
 
 val malloc_array : Ast.typ -> t -> t

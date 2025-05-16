@@ -1,16 +1,23 @@
-(* Memory: bump allocator *)
+(* Bump allocator: Linear memory - 1 page = 65,536 bytes *)
 
 open Ast
 
 type t =
   { previous_pointer : Int32.t
   ; pointer : Int32.t
+  ; pages : Int32.t
   }
 
 let malloc size mem =
+  let nb_pages pt =
+    let pages = Int32.div pt 65536l in
+    let pages = Int32.succ pages in
+    pages
+  in
   let previous_pointer = mem.pointer in
   let pointer = Int32.add mem.pointer size in
-  { previous_pointer; pointer }
+  let pages = nb_pages pointer in
+  { previous_pointer; pointer; pages }
 
 (* Array representation: type[array_size]
      1. type: an i32 id  - meta data
@@ -47,4 +54,5 @@ let is_empty mem = mem.pointer = 0l
 let init () =
   let previous_pointer = 0l in
   let pointer = 0l in
-  { previous_pointer; pointer }
+  let pages = 0l in
+  { previous_pointer; pointer; pages }

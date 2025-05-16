@@ -518,8 +518,8 @@ let write_memory_section buf env =
   else begin
     let memories_buf = Buffer.create 32 in
     let memory_buf = Buffer.create 16 in
-    (* single linear memory: default = 1 page *)
-    write_memtype memory_buf (Limit_without_max 1l);
+    (* single linear memory *)
+    write_memtype memory_buf (Limit_without_max env.memory.pages);
     write_vector memories_buf [ memory_buf ];
     write_section buf '\x05' memories_buf
   end

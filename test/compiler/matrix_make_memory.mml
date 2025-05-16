@@ -1,2 +1,5 @@
 let mat : i32[5][10] = matrix_make 10 5 0 in
 array_size mat + array_size mat[0] (* 15 = 10 + 5 *)
+
+(* memory bump allocator manages the number of pages. Ex. i32[100][100] is now OK *)
+(* but this slows down test execution *)

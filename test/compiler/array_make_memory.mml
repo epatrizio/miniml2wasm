@@ -1,2 +1,5 @@
 let arr : i32[50] = array_make 50 0 in
 array_size arr  (* 50 *)
+
+(* memory bump allocator manages the number of pages. Ex. i32[1000] is now OK *)
+(* but this slows down test execution *)
