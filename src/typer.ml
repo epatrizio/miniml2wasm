@@ -11,6 +11,7 @@ let error loc message =
 
 let typecheck_cst = function
   | Cunit -> Tunit
+  | Cnil -> Tlist Tunknown
   | Cbool _b -> Tbool
   | Ci32 _i32 -> Ti32
 
@@ -187,6 +188,7 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, ident_name)), env)
       | _ -> error loc "attempt to dereference a non reference type"
     end
+  | Econs (_expr_hd, _expr_tl) -> assert false
   | Earray_init el ->
     if List.length el = 0 then error loc "attempt to init a zero-size array";
     let typ, el, _, env =
