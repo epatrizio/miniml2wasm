@@ -2,6 +2,7 @@
  (deps
   array_assert.mml
   array_bounds.mml
+  array_make_memory.mml
   array_make.mml
   array.mml
   assert.mml
@@ -14,6 +15,7 @@
   let_parser_priority.mml
   matrix_bounds_1.mml
   matrix_bounds_2.mml
+  matrix_make_memory.mml
   matrix_make.mml
   matrix.mml
   unused_vars.mml

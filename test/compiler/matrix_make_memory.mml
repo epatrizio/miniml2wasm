@@ -1,4 +1,2 @@
-let mat : i32[3][3] = matrix_make 3 3 0 in
-42
-(* owi error: running instr: i32.store - out of bounds memory access *)
-(* i32[3][2] is ok! *)
+let mat : i32[5][10] = matrix_make 10 5 0 in
+array_size mat + array_size mat[0] (* 15 = 10 + 5 *)

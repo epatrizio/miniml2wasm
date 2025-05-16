@@ -25,12 +25,12 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
   | Tarray (typ, size) ->
     (* 1. type i32 id: check get_type_id_for_array for supported types *)
     let typ_i32 = get_type_id_for_array typ in
-    write_i32_const_u buf pt;
+    write_i32_const_s buf pt;
     write_i32_const_u buf typ_i32;
     write_store buf typ;
     (* 2. array_size: i32 value *)
-    write_i32_const_u buf (Int32.add pt 4l);
-    write_i32_const_u buf size;
+    write_i32_const_s buf (Int32.add pt 4l);
+    write_i32_const_s buf size;
     write_store buf Ti32;
     (* 3. array content *)
     let _pt, stack_nb_elts, env =
@@ -41,13 +41,13 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
           | Ok (expr_buf, stack_nb_elts, env) -> begin
             match typ with
             | Ti32 | Tbool ->
-              write_i32_const_u buf pt;
+              write_i32_const_s buf pt;
               Buffer.add_buffer buf expr_buf;
               write_store buf typ;
               (Int32.add pt 4l, stack_nb_elts - 1, env)
             | Tarray (Ti32, _) | Tarray (Tbool, _) ->
-              write_i32_const_u buf pt;
-              write_i32_const_u buf env.memory.previous_pointer;
+              write_i32_const_s buf pt;
+              write_i32_const_s buf env.memory.previous_pointer;
               write_store buf typ;
               Buffer.add_buffer buf expr_buf;
               (Int32.add pt 4l, stack_nb_elts, env)
@@ -207,7 +207,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
         env
     in
     (* put memory array_pointer on stack for let local/global var *)
-    write_i32_const_u buf previous_pointer;
+    write_i32_const_s buf previous_pointer;
     Ok (buf, stack_nb_elts + 1, env)
   | Earray_size var ->
     (* 1. get array memory pointer *)
@@ -259,7 +259,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     let func_idx = Int32.of_int func_idx in
     (* put func_idx on stack for let local/global var *)
-    write_i32_const_u buf func_idx;
+    write_i32_const_s buf func_idx;
     Ok (buf, stack_nb_elts + 1, env)
   | Efun_import_init (Tfun (arg_typs, res_typ)) ->
     let param_type_bufs =
@@ -276,7 +276,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     let func_idx, env = Env.add_import_fun_wasm functype_buf env in
     let func_idx = Int32.of_int func_idx in
     (* put func_idx on stack for let global var (typing: local is unauthorized) *)
-    write_i32_const_u buf func_idx;
+    write_i32_const_s buf func_idx;
     Ok (buf, stack_nb_elts + 1, env)
   | Efun_import_init _ -> assert false
   | Efun_call ((typ, name), el) ->

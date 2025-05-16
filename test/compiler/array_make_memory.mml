@@ -1,4 +1,2 @@
-let arr : i32[15] = array_make 15 0 in
-42
-(* owi error: running instr: i32.store - out of bounds memory access *)
-(* i32[14] is ok! *)
+let arr : i32[50] = array_make 50 0 in
+array_size arr  (* 50 *)
