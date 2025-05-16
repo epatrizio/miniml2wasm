@@ -7,6 +7,7 @@ type typ =
   | Tbool
   | Ti32
   | Tref of typ
+  | Tlist of typ
   | Tarray of typ * Int32.t
   | Tfun of typ list * typ
   | Tunknown
@@ -33,6 +34,7 @@ type binop =
 
 type cst =
   | Cunit
+  | Cnil
   | Cbool of bool
   | Ci32 of Int32.t
 
@@ -52,6 +54,7 @@ and expr' =
   | Elet of ident * expr * expr
   | Eref of expr
   | Ederef of ident
+  | Econs of expr * expr
   | Earray_init of expr list
   | Earray_size of var
   | Earray_make of cst * expr
@@ -87,6 +90,7 @@ let rec str_typ = function
   | Tunit -> "unit"
   | Tbool -> "bool"
   | Ti32 -> "i32"
+  | Tlist typ -> sprintf {|%s list|} (str_typ typ)
   | Tarray (typ, i) -> sprintf {|%s[%d]|} (str_typ typ) (Int32.to_int i)
   | Tfun (arg_typs, ret_typ) ->
     let arg_typs = if List.length arg_typs = 0 then [ Tunit ] else arg_typs in
@@ -128,6 +132,7 @@ let print_binop fmt binop = pp_print_string fmt (str_binop binop)
 
 let print_cst fmt = function
   | Cunit -> pp_print_string fmt "()"
+  | Cnil -> pp_print_string fmt "nil"
   | Cbool b -> pp_print_bool fmt b
   | Ci32 i32 -> pp_print_int fmt (Int32.to_int i32)
 
@@ -152,6 +157,8 @@ and print_expr fmt (_, _, expr) =
       ident print_expr e1 print_expr e2
   | Eref e -> fprintf fmt {|ref %a|} print_expr e
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
+  | Econs (expr_hd, expr_tl) ->
+    fprintf fmt {|%a :: %a|} print_expr expr_hd print_expr expr_tl
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
   | Earray_size var -> fprintf fmt {|array_size %a|} print_var var
   | Earray_make (cst_size, expr_init) ->

@@ -1,5 +1,5 @@
-%token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF FUN IMPORT EXPORT ARROW EOF ASSERT ARRAY_SIZE ARRAY_MAKE MATRIX_MAKE
+%token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON CONS EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF LIST FUN IMPORT EXPORT ARROW EOF ASSERT ARRAY_SIZE ARRAY_MAKE MATRIX_MAKE
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -12,8 +12,10 @@
 %right ARROW
 %right ELSE
 %right IN
+%right CONS
 %left COLON
 %left REF
+%left LIST
 
 %right OR
 %right AND
@@ -73,6 +75,7 @@ let expr_bis :=
   | LET; ~ = ident; EQ; e1 = expr; IN; e2 = expr; <Elet>
   | ~ = preceded(REF, expr); <Eref>
   | EXCL; ~ = ident; <Ederef>
+  | e1 = expr; CONS; e2 = expr; <Econs>
   | ~ = delimited(LBRACKET, separated_list(COMMA, expr), RBRACKET); <Earray_init>
   | ARRAY_SIZE; ~ = var; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
@@ -117,6 +120,7 @@ let typ :=
   | TBOOL; { Tbool }
   | TI32; { Ti32 }
   | ~ = terminated(typ, REF); <Tref>
+  | ~ = terminated(typ, LIST); <Tlist>
   | typ = typ; cst = delimited(LBRACKET, CST, RBRACKET); {
       match cst with
       | Ci32 i32 -> Tarray (typ, i32)

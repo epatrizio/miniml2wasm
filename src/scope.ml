@@ -47,6 +47,10 @@ and analyse_expr (loc, typ, expr') env =
   | Ederef (typ_ident, name) ->
     let* name = Env.get_name name env in
     Ok ((loc, typ, Ederef (typ_ident, name)), env)
+  | Econs (expr_hd, expr_tl) ->
+    let* expr_hd, env = analyse_expr expr_hd env in
+    let* expr_tl, env = analyse_expr expr_tl env in
+    Ok ((loc, typ, Econs (expr_hd, expr_tl)), env)
   | Earray_init el ->
     let el, env =
       List.fold_left
