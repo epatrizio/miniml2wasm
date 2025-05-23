@@ -58,6 +58,7 @@ let get_blocktype = function
   | Tunit -> Empty
   | Tbool -> Valtyp Tbool
   | Ti32 -> Valtyp Ti32
+  | Tlist _ -> assert false
   | Tarray _ -> Valtyp Ti32
   | Tref _ -> assert false
   | Tfun _ -> assert false
@@ -153,7 +154,7 @@ let write_numtype buf = function
   | Tbool | Ti32 | Tref Ti32 | Tref Tbool | Tarray _ | Tfun _ ->
     (* memory pointer (array): i32 - global/local fun idx: i32 *)
     Buffer.add_char buf '\x7f'
-  | Tunit | Tref _ | Tunknown -> ()
+  | Tunit | Tref _ | Tlist _ | Tunknown -> ()
 
 let write_valtype = write_numtype
 
@@ -177,6 +178,7 @@ let write_binop buf = function
 let write_mut buf = function
   | Tunit | Tbool | Ti32 | Tfun _ -> Buffer.add_char buf '\x00'
   | Tref _ -> Buffer.add_char buf '\x01'
+  | Tlist _ -> assert false
   | Tarray _ -> assert false
   | Tunknown -> assert false
 

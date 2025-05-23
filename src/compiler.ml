@@ -131,6 +131,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
   match expr' with
   | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
+  | Ecst Cnil -> assert false
   | Ecst (Cbool b) ->
     write_i32_const_u buf (if b then 1l else 0l);
     Ok (buf, stack_nb_elts + 1, env)
@@ -199,6 +200,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
+  | Econs (_expr_hd, _expr_tl) -> assert false
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in

@@ -11,6 +11,7 @@ let error loc message =
 
 let typecheck_cst = function
   | Cunit -> Tunit
+  | Cnil -> Tlist Tunknown
   | Cbool _b -> Tbool
   | Ci32 _i32 -> Ti32
 
@@ -186,6 +187,36 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
       match typ with
       | Tref typ -> Ok ((loc, typ, Ederef (Tref typ, ident_name)), env)
       | _ -> error loc "attempt to dereference a non reference type"
+    end
+  | Econs (expr_hd, expr_tl) ->
+    let* (loc_tl, typ_tl, expr_tl'), env = typecheck_expr expr_tl env in
+    begin
+      match typ_tl with
+      | Tlist typ_elt_list ->
+        let* (loc_hd, typ_hd, expr_hd'), env = typecheck_expr expr_hd env in
+        begin
+          match typ_hd with
+          | Tbool | Ti32 ->
+            if typ_elt_list = Tunknown || typ_elt_list = typ_hd then
+              Ok
+                ( ( loc
+                  , Tlist typ_hd
+                  , Econs
+                      ((loc_hd, typ_hd, expr_hd'), (loc_tl, typ_tl, expr_tl'))
+                  )
+                , env )
+            else
+              error loc
+                "attempt to perform a cons operation with different types"
+          | t ->
+            let msg =
+              Format.sprintf
+                {|attempt to perform a cons operation with a non supported type (%s)|}
+                (str_typ t)
+            in
+            error loc msg
+        end
+      | _ -> error loc "attempt to perform a cons operation a non list var"
     end
   | Earray_init el ->
     if List.length el = 0 then error loc "attempt to init a zero-size array";

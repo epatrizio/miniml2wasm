@@ -20,6 +20,8 @@ let boolean = [%sedlex.regexp? "true" | "false"]
 
 let integer = [%sedlex.regexp? Plus digit]
 
+let nil = [%sedlex.regexp? "nil"]
+
 let rec token buf =
   match%sedlex buf with
   | Plus (Chars " \t") -> token buf
@@ -27,6 +29,7 @@ let rec token buf =
   | boolean -> CST (Cbool (bool_of_string (Sedlexing.Utf8.lexeme buf)))
   | integer ->
     CST (Ci32 (Int32.of_int (int_of_string (Sedlexing.Utf8.lexeme buf))))
+  | nil -> CST Cnil
   | '+' -> PLUS
   | '-' -> MINUS
   | '*' -> MUL
@@ -49,6 +52,7 @@ let rec token buf =
   | ',' -> COMMA
   | ';' -> SEMICOLON
   | ':' -> COLON
+  | "::" -> CONS
   | '!' -> EXCL
   | "let" -> LET
   | "in" -> IN
@@ -61,6 +65,7 @@ let rec token buf =
   | "do" -> DO
   | "done" -> DONE
   | "ref" -> REF
+  | "list" -> LIST
   | "fun" -> FUN
   | "import" -> IMPORT
   | "export" -> EXPORT

@@ -1,0 +1,2 @@
+let l : i32 list = true :: nil in
+42

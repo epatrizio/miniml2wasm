@@ -74,6 +74,9 @@ and analyse_expr (_loc, _typ, expr') vars_use =
     analyse_expr e2 vars_use
   | Eref expr -> analyse_expr expr vars_use
   | Ederef (_typ_ident, name) -> use_var name vars_use
+  | Econs (expr_hd, expr_tl) ->
+    let* vars_use = analyse_expr expr_hd vars_use in
+    analyse_expr expr_tl vars_use
   | Earray_init el ->
     let vars_use =
       List.fold_left
