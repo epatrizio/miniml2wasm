@@ -39,6 +39,10 @@
   fun_10.mml
   global_binop.mml
   import.mml
+  list_1.mml
+  list_2.mml
+  list_3.mml
+  list_4.mml
   local_binop.mml
   local_if.mml
   local_unop.mml

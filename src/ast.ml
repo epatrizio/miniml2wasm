@@ -97,6 +97,7 @@ let rec str_typ = function
     let typs = arg_typs @ [ ret_typ ] in
     let typs = List.map str_typ typs in
     String.concat " -> " typs
+  | Tunknown -> "unknown_type"
   | _ -> assert false
 
 let print_typ fmt typ =
@@ -104,7 +105,6 @@ let print_typ fmt typ =
   @@
   match typ with
   | Tref typ -> sprintf {|%s ref|} (str_typ typ)
-  | Tunknown -> "unknown_type"
   | typ -> str_typ typ
 
 let print_ident fmt ?(typ_display = false) ((typ, name) as _ident : ident) =
