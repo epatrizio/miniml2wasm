@@ -49,6 +49,26 @@ let malloc_array typ mem =
   let mem = malloc size mem in
   mem
 
+(* List representation
+    1. cell value (type_len:i32)
+    2. next pointer (i32)
+  Restriction: only bool & i32 list
+*)
+let malloc_list_cell typ mem =
+  let malloc_size typ =
+    match typ with
+    | Tlist Ti32 | Tlist Tbool ->
+      (* 1. *)
+      let msize = 4l in
+      (* 2. *)
+      let msize = Int32.add msize 4l in
+      msize
+    | _ -> assert false
+  in
+  let size = malloc_size typ in
+  let mem = malloc size mem in
+  mem
+
 let is_empty mem = mem.pointer = 0l
 
 let init () =

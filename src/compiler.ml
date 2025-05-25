@@ -131,7 +131,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   let buf = Buffer.create 16 in
   match expr' with
   | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
-  | Ecst Cnil -> assert false
+  | Ecst Cnil ->
+    write_i32_const_u buf 0l;
+    Ok (buf, stack_nb_elts + 1, env)
   | Ecst (Cbool b) ->
     write_i32_const_u buf (if b then 1l else 0l);
     Ok (buf, stack_nb_elts + 1, env)
@@ -200,7 +202,29 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
-  | Econs (_expr_hd, _expr_tl) -> assert false
+  (*
+    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Ecst Cnil) as _expr_tl)) ->
+    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Evar (Vident (_typ, _name))) as _expr_tl)) ->
+    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Econs (_hd, _tl)) as _expr_tl)) -> *)
+  | Econs (((_, typ_hd, _) as expr_hd), expr_tl) ->
+    let env = Env.malloc_list_cell typ env in
+    let previous_pointer = env.memory.previous_pointer in
+    (* 1. The elt value *)
+    let* expr_hd_buf, stack_nb_elts, env =
+      compile_expr expr_hd stack_nb_elts env
+    in
+    write_i32_const_s buf previous_pointer;
+    Buffer.add_buffer buf expr_hd_buf;
+    write_store buf typ_hd;
+    (* 2. The pointer to the tl list - WIP: is compile_expr expr_tl ok ? *)
+    let* expr_tl_buf, stack_nb_elts, env =
+      compile_expr expr_tl stack_nb_elts env
+    in
+    write_i32_const_s buf (Int32.add previous_pointer 4l);
+    Buffer.add_buffer buf expr_tl_buf;
+    write_store buf Ti32;
+    write_i32_const_s buf previous_pointer;
+    Ok (buf, stack_nb_elts + 1, env)
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in

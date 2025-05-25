@@ -6,6 +6,8 @@ type t =
 
 val malloc_array : Ast.typ -> t -> t
 
+val malloc_list_cell : Ast.typ -> t -> t
+
 val is_empty : t -> bool
 
 val init : unit -> t

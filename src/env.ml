@@ -85,6 +85,10 @@ let malloc_array typ env =
   let memory = Memory.malloc_array typ env.memory in
   { env with memory }
 
+let malloc_list_cell typ env =
+  let memory = Memory.malloc_list_cell typ env.memory in
+  { env with memory }
+
 let is_empty_memory env = Memory.is_empty env.memory
 
 let global_wasm_idx_counter = counter (-1)
