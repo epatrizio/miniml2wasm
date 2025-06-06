@@ -1,5 +1,5 @@
 %token PLUS MINUS MUL DIV LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON COLON CONS EXCL EQ LT LE GT GE EQEQ NEQ REFEQ NOT AND OR
-%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF LIST FUN IMPORT EXPORT ARROW EOF ASSERT ARRAY_SIZE ARRAY_MAKE MATRIX_MAKE
+%token LET IN BEGIN DO DONE END WHILE IF THEN ELSE REF LIST FUN IMPORT EXPORT ARROW EOF ASSERT ARRAY_SIZE ARRAY_MAKE MATRIX_MAKE LIST_HD LIST_TL LIST_EMPTY
 %token TUNIT TBOOL TI32
 %token <string> NAME
 %token <Ast.cst> CST
@@ -16,6 +16,9 @@
 %left COLON
 %left REF
 %left LIST
+%left LIST_HD
+%left LIST_TL
+%left LIST_EMPTY
 
 %right OR
 %right AND
@@ -80,6 +83,9 @@ let expr_bis :=
   | ARRAY_SIZE; ~ = var; <Earray_size>
   | ARRAY_MAKE; ~ = CST; ~ = expr; <Earray_make>
   | MATRIX_MAKE; ~ = CST; ~ = CST; ~ = expr; <Earray_matrix_make>
+  | LIST_HD; ~ = expr; <Elist_hd>
+  | LIST_TL; ~ = expr; <Elist_tl>
+  | LIST_EMPTY; ~ = expr; <Elist_empty>
   | export = option(EXPORT); FUN; idents = delimited(LPAREN, separated_list(COMMA, ident), RPAREN); typ = option(preceded(COLON, typ)); body = delimited(LBRACE, block, RBRACE); {
       match typ with
       | Some typ -> Efun_init (Option.is_some export, idents, typ, body)

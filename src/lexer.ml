@@ -75,6 +75,9 @@ let rec token buf =
   | "array_size" -> ARRAY_SIZE
   | "array_make" -> ARRAY_MAKE
   | "matrix_make" -> MATRIX_MAKE
+  | "list_hd" -> LIST_HD
+  | "list_tl" -> LIST_TL
+  | "list_empty" -> LIST_EMPTY
   | "assert" -> ASSERT
   | "unit" -> TUNIT
   | "bool" -> TBOOL
