@@ -55,6 +55,9 @@ and expr' =
   | Eref of expr
   | Ederef of ident
   | Econs of expr * expr
+  | Elist_hd of expr
+  | Elist_tl of expr
+  | Elist_empty of expr
   | Earray_init of expr list
   | Earray_size of var
   | Earray_make of cst * expr
@@ -159,6 +162,9 @@ and print_expr fmt (_, _, expr) =
   | Ederef ident -> fprintf fmt {|!%a|} (print_ident ~typ_display:false) ident
   | Econs (expr_hd, expr_tl) ->
     fprintf fmt {|%a :: %a|} print_expr expr_hd print_expr expr_tl
+  | Elist_hd expr_list -> fprintf fmt {|list_hd %a|} print_expr expr_list
+  | Elist_tl expr_list -> fprintf fmt {|list_tl %a|} print_expr expr_list
+  | Elist_empty expr_list -> fprintf fmt {|list_empty %a|} print_expr expr_list
   | Earray_init el -> fprintf fmt "[%a]" (pp_print_list ~pp_sep print_expr) el
   | Earray_size var -> fprintf fmt {|array_size %a|} print_var var
   | Earray_make (cst_size, expr_init) ->

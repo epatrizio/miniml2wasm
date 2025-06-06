@@ -218,6 +218,8 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         end
       | _ -> error loc "attempt to perform a cons operation a non list var"
     end
+  | Elist_hd _expr_list | Elist_tl _expr_list | Elist_empty _expr_list ->
+    assert false
   | Earray_init el ->
     if List.length el = 0 then error loc "attempt to init a zero-size array";
     let typ, el, _, env =
