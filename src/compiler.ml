@@ -202,10 +202,6 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
-  (*
-    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Ecst Cnil) as _expr_tl)) ->
-    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Evar (Vident (_typ, _name))) as _expr_tl)) ->
-    | Econs (((_, _typ_hd, _) as _expr_hd), ((_, _, Econs (_hd, _tl)) as _expr_tl)) -> *)
   | Econs (((_, typ_hd, _) as expr_hd), expr_tl) ->
     let env = Env.malloc_list_cell typ env in
     let previous_pointer = env.memory.previous_pointer in
@@ -224,7 +220,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Buffer.add_buffer buf expr_tl_buf;
     write_store buf Ti32;
     write_i32_const_s buf previous_pointer;
-    Ok (buf, stack_nb_elts + 1, env)
+    Ok (buf, stack_nb_elts - 1, env)
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in
