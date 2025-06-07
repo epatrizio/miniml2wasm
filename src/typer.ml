@@ -216,10 +216,43 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
             in
             error loc msg
         end
-      | _ -> error loc "attempt to perform a cons operation a non list var"
+      | _ -> error loc "attempt to perform a cons operation on a non list var"
     end
-  | Elist_hd _expr_list | Elist_tl _expr_list | Elist_empty _expr_list ->
-    assert false
+  | Elist_hd expr_list ->
+    let* (loc_list, typ_list, expr_list'), env = typecheck_expr expr_list env in
+    begin
+      match typ_list with
+      | Tlist Tunknown ->
+        error loc
+          "attempt to perform a list_hd operation on a non typed list or an \
+           empty list"
+      | Tlist typ_elt ->
+        Ok ((loc, typ_elt, Elist_hd (loc_list, typ_list, expr_list')), env)
+      | _ ->
+        error loc "attempt to perform a list_hd operation on a non list var"
+    end
+  | Elist_tl expr_list ->
+    let* (loc_list, typ_list, expr_list'), env = typecheck_expr expr_list env in
+    begin
+      match typ_list with
+      | Tlist Tunknown ->
+        error loc
+          "attempt to perform a list_tl operation on a non typed list or an \
+           empty list"
+      | Tlist _ as typ_l ->
+        Ok ((loc, typ_l, Elist_tl (loc_list, typ_list, expr_list')), env)
+      | _ ->
+        error loc "attempt to perform a list_tl operation on a non list var"
+    end
+  | Elist_empty expr_list ->
+    let* (loc_list, typ_list, expr_list'), env = typecheck_expr expr_list env in
+    begin
+      match typ_list with
+      | Tlist _ ->
+        Ok ((loc, Tbool, Elist_empty (loc_list, typ_list, expr_list')), env)
+      | _ ->
+        error loc "attempt to perform a list_empty operation on a non list var"
+    end
   | Earray_init el ->
     if List.length el = 0 then error loc "attempt to init a zero-size array";
     let typ, el, _, env =
