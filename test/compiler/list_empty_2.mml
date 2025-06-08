@@ -1,0 +1,2 @@
+let l = 42 :: nil in
+list_empty l

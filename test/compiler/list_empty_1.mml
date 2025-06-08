@@ -1,0 +1,2 @@
+let l = nil in
+list_empty l

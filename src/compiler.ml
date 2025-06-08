@@ -221,8 +221,14 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_store buf Ti32;
     write_i32_const_s buf previous_pointer;
     Ok (buf, stack_nb_elts - 1, env)
-  | Elist_hd _expr_list | Elist_tl _expr_list | Elist_empty _expr_list ->
-    assert false
+  | Elist_hd _expr_list | Elist_tl _expr_list -> assert false
+  | Elist_empty (_, typ_list, _) -> begin
+    match typ_list with
+    | Tlist Tunknown ->
+      compile_expr (loc, typ, Ecst (Cbool true)) stack_nb_elts env
+    | Tlist _ -> compile_expr (loc, typ, Ecst (Cbool false)) stack_nb_elts env
+    | _ -> assert false (* typing step control *)
+  end
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in
