@@ -132,7 +132,8 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   match expr' with
   | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
   | Ecst Cnil ->
-    write_i32_const_u buf 0l;
+    (* -1: to distinguish a valid pointer value (>= 0) *)
+    write_i32_const_s buf (-1l);
     Ok (buf, stack_nb_elts + 1, env)
   | Ecst (Cbool b) ->
     write_i32_const_u buf (if b then 1l else 0l);
@@ -242,11 +243,14 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     (* load the next elt pointer (= the tail list pointer) *)
     write_load buf Ti32;
     Ok (buf, stack_nb_elts, env)
-  | Elist_empty (_, Tlist typ_elt, _) -> begin
-    match typ_elt with
-    | Tunknown -> compile_expr (loc, typ, Ecst (Cbool true)) stack_nb_elts env
-    | _ -> compile_expr (loc, typ, Ecst (Cbool false)) stack_nb_elts env
-  end
+  | Elist_empty ((_, Tlist _, _) as expr_list) ->
+    (* control pointer: empty if special "nil" value -1 *)
+    let e_if =
+      (loc, Tbool, Ebinop (expr_list, Bgt, (loc, Ti32, Ecst (Ci32 (-1l)))))
+    in
+    let e_then = (loc, Tbool, Ecst (Cbool false)) in
+    let e_else = (loc, Tbool, Ecst (Cbool true)) in
+    compile_expr (loc, Tbool, Eif (e_if, e_then, e_else)) stack_nb_elts env
   | Elist_hd _ | Elist_tl _ | Elist_empty _ ->
     assert false (* typing step control *)
   | Earray_init el ->
