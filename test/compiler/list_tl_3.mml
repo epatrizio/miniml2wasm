@@ -1,0 +1,3 @@
+let l = 42 :: nil in
+let l = list_tl l in
+list_tl l
