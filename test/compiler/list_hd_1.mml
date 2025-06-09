@@ -1,0 +1,4 @@
+let l = nil in
+let l = 40 :: nil in
+let l = 42 :: 41 :: l in
+list_hd l
