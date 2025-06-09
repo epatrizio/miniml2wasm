@@ -222,20 +222,33 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     write_i32_const_s buf previous_pointer;
     Ok (buf, stack_nb_elts - 1, env)
   | Elist_hd ((_, Tlist typ_elt, _) as expr_list) ->
+    (* get the list pointer (= first elt pointer) *)
     let* expr_list_buf, stack_nb_elts, env =
       compile_expr expr_list stack_nb_elts env
     in
     Buffer.add_buffer buf expr_list_buf;
+    (* load the content of the first list elt *)
     write_load buf typ_elt;
+    Ok (buf, stack_nb_elts, env)
+  | Elist_tl ((_, Tlist _, _) as expr_list) ->
+    (* get the list pointer *)
+    let* expr_list_buf, stack_nb_elts, env =
+      compile_expr expr_list stack_nb_elts env
+    in
+    Buffer.add_buffer buf expr_list_buf;
+    (* move to the next block elt (4l= size elt, hard-coded) *)
+    write_i32_const_s buf 4l;
+    write_binop buf Badd;
+    (* load the next elt pointer (= the tail list pointer) *)
+    write_load buf Ti32;
     Ok (buf, stack_nb_elts, env)
   | Elist_empty (_, Tlist typ_elt, _) -> begin
     match typ_elt with
     | Tunknown -> compile_expr (loc, typ, Ecst (Cbool true)) stack_nb_elts env
     | _ -> compile_expr (loc, typ, Ecst (Cbool false)) stack_nb_elts env
   end
-  | Elist_empty _ -> assert false (* typing step control *)
-  | Elist_hd _ -> assert false (* typing step control *)
-  | Elist_tl _expr_list -> assert false
+  | Elist_hd _ | Elist_tl _ | Elist_empty _ ->
+    assert false (* typing step control *)
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in
