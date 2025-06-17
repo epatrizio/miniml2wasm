@@ -154,6 +154,7 @@ let write_numtype buf = function
   | Tbool | Ti32
   | Tref Ti32
   | Tref Tbool
+  | Tref (Tlist _)
   | Tlist Tunknown
   | Tlist Ti32
   | Tlist Tbool

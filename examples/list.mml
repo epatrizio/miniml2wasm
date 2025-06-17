@@ -1,0 +1,68 @@
+let print_i32 : i32 -> unit = import fun(i32) : unit;
+
+(* get the length of the given list *)
+let list_i32_length = fun(l : i32 list) : i32 {
+  let is_empty = ref list_empty l in
+  let l_tl = ref l in
+  let len = ref 0 in
+  begin
+    while not !is_empty do
+      len := !len + 1;
+      l_tl := list_tl !l_tl;
+      is_empty := list_empty !l_tl
+    done;
+    !len
+  end
+};
+
+(* print the given list *)
+let print_i32_list = fun(l : i32 list) : unit {
+  let is_empty = ref list_empty l in
+  let l_hd = ref 0 in
+  let l_tl = ref l in
+  begin
+    while not !is_empty do
+      l_hd := list_hd !l_tl;
+      l_tl := list_tl !l_tl;
+      print_i32(!l_hd);
+      is_empty := list_empty !l_tl
+    done
+  end
+};
+
+(* get the n-th element of the given list *)
+let list_i32_nth = fun(l : i32 list, n : i32) : i32 {
+  let is_empty = ref list_empty l in
+  let l_len = list_i32_length(l) in
+  let l_hd = ref 0 in
+  let l_tl = ref l in
+  let current = ref 1 in
+  let nth = ref n in
+  begin
+    assert (not !is_empty);
+    assert (n > 0 && n <= l_len);
+    while not !is_empty do
+      if !current < !nth then
+        begin
+          current := !current + 1;
+          l_tl := list_tl !l_tl;
+          is_empty := list_empty !l_tl
+        end
+      else
+        begin
+          l_hd := list_hd !l_tl;
+          is_empty := true
+        end
+    done;
+    !l_hd
+  end
+};
+
+let my_list = 11 :: 22 :: 33 :: 44 :: nil in
+let my_list_len = list_i32_length(my_list) in
+let my_list_nth = list_i32_nth(my_list, 3) in
+  begin
+    print_i32(my_list_len);
+    print_i32(my_list_nth);
+    print_i32_list(my_list)
+  end
