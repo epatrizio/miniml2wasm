@@ -4,6 +4,8 @@
   export.js
   fact.mml
   fibo.mml
+  list.mml
+  list.js
   print.mml
   print.js
   (glob_files _wasm/*)))

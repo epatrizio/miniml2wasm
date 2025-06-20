@@ -128,9 +128,24 @@ and compile_var buf loc var stack_nb_elts env =
   | Varray _ -> assert false (* only 1-dim & 2-dim array are supported *)
 
 and compile_expr (loc, typ, expr') stack_nb_elts env =
+  let check_valid_list_pt_expr expr_list =
+    (loc, Tbool, Ebinop (expr_list, Bgt, (loc, Ti32, Ecst (Ci32 (-1l)))))
+  in
+  let assert_valid_list_pt buf expr_list =
+    let assert_stmt = Sassert (check_valid_list_pt_expr expr_list) in
+    let* assert_expr_buf, stack_nb_elts, env =
+      compile_expr (loc, Tunit, Estmt (loc, assert_stmt)) stack_nb_elts env
+    in
+    Buffer.add_buffer buf assert_expr_buf;
+    Ok (stack_nb_elts, env)
+  in
   let buf = Buffer.create 16 in
   match expr' with
   | Ecst Cunit -> Ok (buf, stack_nb_elts, env)
+  | Ecst Cnil ->
+    (* -1: to distinguish a valid pointer value (>= 0) *)
+    write_i32_const_s buf (-1l);
+    Ok (buf, stack_nb_elts + 1, env)
   | Ecst (Cbool b) ->
     write_i32_const_u buf (if b then 1l else 0l);
     Ok (buf, stack_nb_elts + 1, env)
@@ -199,6 +214,58 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (expr_buf, stack_nb_elts, env)
   | Ederef (typ, name) ->
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
+  | Econs (((_, typ_hd, _) as expr_hd), expr_tl) ->
+    let env = Env.malloc_list_cell typ env in
+    let previous_pointer = env.memory.previous_pointer in
+    (* 1. The elt value *)
+    let* expr_hd_buf, stack_nb_elts, env =
+      compile_expr expr_hd stack_nb_elts env
+    in
+    write_i32_const_s buf previous_pointer;
+    Buffer.add_buffer buf expr_hd_buf;
+    write_store buf typ_hd;
+    (* 2. The pointer to the tl list - WIP: is compile_expr expr_tl ok ? *)
+    let* expr_tl_buf, stack_nb_elts, env =
+      compile_expr expr_tl stack_nb_elts env
+    in
+    write_i32_const_s buf (Int32.add previous_pointer 4l);
+    Buffer.add_buffer buf expr_tl_buf;
+    write_store buf Ti32;
+    write_i32_const_s buf previous_pointer;
+    Ok (buf, stack_nb_elts - 1, env)
+  | Elist_hd ((_, Tlist typ_elt, _) as expr_list) ->
+    (* insert assert stmt code: is a valid pointer (not an empty list) *)
+    let* stack_nb_elts, env = assert_valid_list_pt buf expr_list in
+    (* get the list pointer (= first elt pointer) *)
+    let* expr_list_buf, stack_nb_elts, env =
+      compile_expr expr_list stack_nb_elts env
+    in
+    Buffer.add_buffer buf expr_list_buf;
+    (* load the content of the first list elt *)
+    write_load buf typ_elt;
+    Ok (buf, stack_nb_elts, env)
+  | Elist_tl ((_, Tlist _, _) as expr_list) ->
+    (* insert assert stmt code: is a valid pointer (not an empty list) *)
+    let* stack_nb_elts, env = assert_valid_list_pt buf expr_list in
+    (* get the list pointer *)
+    let* expr_list_buf, stack_nb_elts, env =
+      compile_expr expr_list stack_nb_elts env
+    in
+    Buffer.add_buffer buf expr_list_buf;
+    (* move to the next block elt (4l= size elt, hard-coded) *)
+    write_i32_const_s buf 4l;
+    write_binop buf Badd;
+    (* load the next elt pointer (= the tail list pointer) *)
+    write_load buf Ti32;
+    Ok (buf, stack_nb_elts, env)
+  | Elist_empty ((_, Tlist _, _) as expr_list) ->
+    (* control pointer: empty if special "nil" value -1 *)
+    let e_if = check_valid_list_pt_expr expr_list in
+    let e_then = (loc, Tbool, Ecst (Cbool false)) in
+    let e_else = (loc, Tbool, Ecst (Cbool true)) in
+    compile_expr (loc, Tbool, Eif (e_if, e_then, e_else)) stack_nb_elts env
+  | Elist_hd _ | Elist_tl _ | Elist_empty _ ->
+    assert false (* typing step control *)
   | Earray_init el ->
     let env = Env.malloc_array typ env in
     let previous_pointer = env.memory.previous_pointer in

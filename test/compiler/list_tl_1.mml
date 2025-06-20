@@ -1,0 +1,2 @@
+let l = 41 :: 42 :: nil in
+list_hd (list_tl l)

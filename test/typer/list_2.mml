@@ -1,0 +1,2 @@
+let l = 1 :: 2 in   (* 2 isn't a list! *)
+42
