@@ -1,0 +1,3 @@
+let l : i32 list = nil in   (* force the list type *)
+let l = true :: l in        (* true:bool != i32 *)
+42

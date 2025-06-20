@@ -176,6 +176,20 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
             , t
             , Elet ((typ_e1, ident_name), (loc_e1, typ_e1, e1'), (l, t, e2')) )
           , env )
+      | ident_typ, typ_e1
+        when (ident_typ = Tlist Tbool || ident_typ = Tlist Ti32)
+             && typ_e1 = Tlist Tunknown
+             || (ident_typ = Tref (Tlist Tbool) || ident_typ = Tref (Tlist Ti32))
+                && typ_e1 = Tref (Tlist Tunknown) ->
+        (* specify the type of an empty list *)
+        let env = Env.set_type ident_name ident_typ env in
+        let* (l, t, e2'), env = typecheck_expr e2 env in
+        Ok
+          ( ( loc
+            , t
+            , Elet ((ident_typ, ident_name), (loc_e1, typ_e1, e1'), (l, t, e2'))
+            )
+          , env )
       | _ -> error loc "attempt to perform an assignment with different types"
     end
   | Eref expr ->
