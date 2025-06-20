@@ -32,9 +32,19 @@ A statement should be seen as an expression of type unit.
 
 Summary of supported language features:
 
-- Value types: unit, bool, i32, reference of type, array of type (fixed size), function
+- Value types: unit, bool, i32, reference of type, array of type (fixed size), list of type, function
 - Expressions: Constants, unary and binary operations, blocks, if condition, let binding local and global, array, function (init & call)
-- Statements: assignements, while loop, array_size and assert primitives
+- Statements: assignements, while loop
+- Primitives
+  - assert: `assert bool_expr`
+  - Array
+    - `array_size arr_expr`
+    - `array_make i32_cst_size default_val_expr`
+    - `matrix_make i32_cst_x_size i32_cst_y_size default_val_expr`
+  - List
+    - `list_empty list_expr`
+    - `list_hd list_expr` (head element of the list)
+    - `list_tl list_expr` (tail list of the list)
 
 Example of some language main features:
 
