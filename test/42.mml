@@ -8,8 +8,12 @@
 let print_i32 : i32 -> unit = import fun(i32) : unit;
 
 let x = 40;
+
 (* let arr : bool[2] = [true,true]; *)
-(* array are not supported in a global context *)
+(* arrays are not supported in a global context *)
+
+(* let li : bool list = true :: nil; *)
+(* lists are not supported in a global context *)
 
 (* function can be global and local *)
 (* export - optional attribute - functions must be global *)
@@ -35,6 +39,15 @@ let array : bool[2] = [true,true] in
 (*            (i32[y])[x] - elt_type[size] *)
 (* let matrix : i32[2][3] = matrix_make 3 2 0 in *)
 let matrix : i32[2][3] = [[0,0],[0,0],[0,0]] in
+let li : i32 list = 42 :: 21 :: nil in
+(* let li = nil in *)
+(* nil: empty list, element types are unknown at this moment *)
+(* let li = 42 :: li in *)
+(* li type is inferred: i32 list *)
+(* let li : i32 list = nil in *)
+(* li type should be forced from the beginning *)
+let li_hd = list_hd li in   (* head list: 42 *)
+let li_tl = list_tl li in   (* tail list: 21 :: nil *)
   begin  (* block *)
     (* primitive function: assert. If false-cond, a trap is emit *)
     assert true;
