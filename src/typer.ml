@@ -366,7 +366,8 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
     begin
       match (typ, typ_body) with
       | typ, typ_body
-        when (typ_body = Tunit || typ_body = Tbool || typ_body = Ti32)
+        when ( typ_body = Tunit || typ_body = Tbool || typ_body = Ti32
+             || typ_body = Tlist Ti32 || typ_body = Tlist Tbool )
              && (typ = Tunknown || typ = typ_body) ->
         Ok
           ( ( loc

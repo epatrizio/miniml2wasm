@@ -58,7 +58,25 @@ let list_i32_nth = fun(l : i32 list, n : i32) : i32 {
   end
 };
 
+(* reverse the given list *)
+let list_i32_rev = fun(l : i32 list) : i32 list {
+  let is_empty = ref list_empty l in
+  let l_hd = ref 0 in
+  let l_tl = ref l in
+  let l_rev : i32 list ref = ref nil in
+  begin
+    while not !is_empty do
+      l_hd := list_hd !l_tl;
+      l_tl := list_tl !l_tl;
+      l_rev := !l_hd :: !l_rev;
+      is_empty := list_empty !l_tl
+    done;
+    !l_rev
+  end
+};
+
 let my_list = 11 :: 22 :: 33 :: 44 :: nil in
+(*let my_list = list_i32_rev(my_list) in*)
 let my_list_len = list_i32_length(my_list) in
 let my_list_nth = list_i32_nth(my_list, 3) in
   begin

@@ -58,7 +58,7 @@ let get_blocktype = function
   | Tunit -> Empty
   | Tbool -> Valtyp Tbool
   | Ti32 -> Valtyp Ti32
-  | Tlist _ -> assert false
+  | Tlist _ -> Valtyp Ti32
   | Tarray _ -> Valtyp Ti32
   | Tref _ -> assert false
   | Tfun _ -> assert false
