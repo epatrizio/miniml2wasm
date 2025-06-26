@@ -147,6 +147,18 @@ Variables and expressions can be inferred. But not function arguments, whose typ
 Like the very interesting [AssemblyScript](https://www.assemblyscript.org) language,
 we're offering here a less powerful, sometimes limited, but sufficient and highly oriented type system to target WebAssembly.
 
+### Recursive functions focus
+
+`miniml` supports recursive functions ([issue#16](https://github.com/epatrizio/miniml2wasm/issues/16)).
+Current implementation has been done with some custom tricky stuffs.
+In fact, the function being processed must refer to itself. So we need to pass information earlier to the environment.
+To achieve this, there's a restriction: recursive functions must be specifically typed, inference doesn't work in this context.
+
+Nb. `miniml` doesn't support mutually recursive functions.
+
+In OCaml, there are specific keywords `rec` & `and` ([details](https://ocamlbook.org/recursive-functions/)).
+This probably makes implementation more solid and elegant.
+
 ### About import and export
 
 This compiler specifically targets wasm, so it's interesting to implement these features:
