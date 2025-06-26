@@ -7,4 +7,4 @@ factorial:
   compilation target file _wasm/fact.wasm: done!
   $ wasm -d _wasm/fact.wasm -o _wasm/fact.wat
   $ owi _wasm/fact.wat
-  function 1function 0
+  function 2function 1function 0

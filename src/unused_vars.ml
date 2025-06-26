@@ -69,8 +69,8 @@ and analyse_expr (_loc, _typ, expr') vars_use =
     let* vars_use = analyse_expr e_then vars_use in
     analyse_expr e_else vars_use
   | Elet ((_typ_ident, name), e1, e2) ->
-    let* vars_use = analyse_expr e1 vars_use in
     let vars_use = add_local name vars_use in
+    let* vars_use = analyse_expr e1 vars_use in
     analyse_expr e2 vars_use
   | Eref expr -> analyse_expr expr vars_use
   | Ederef (_typ_ident, name) -> use_var name vars_use
@@ -122,8 +122,9 @@ and analyse_block block vars_use =
 and analyse_stmt (_loc, stmt') vars_use =
   match stmt' with
   | Slet ((_typ_ident, name), expr) ->
+    let vars_use = add_global name vars_use in
     let* vars_use = analyse_expr expr vars_use in
-    Ok (add_global name vars_use)
+    Ok vars_use
   | Sassign (var, expr) ->
     let* vars_use = analyse_var var vars_use in
     analyse_expr expr vars_use

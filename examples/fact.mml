@@ -13,7 +13,16 @@ let fun_fact = fun(n : i32) : i32 {
   end
 };
 
-(* TODO: Recursive version *)
+(* recursive version *)
+let fun_fact_rec : i32 -> i32 = fun(n : i32) : i32 {
+  assert (n >= 0);
+  if n == 0 then 0
+  else
+    begin
+      if n == 1 then 1
+      else n * fun_fact(n-1)
+    end
+};
 
 (* factorial 6 direct computation *)
 let fact : i32 ref = ref 0;
@@ -27,4 +36,6 @@ let n : i32 ref = ref 6 in
     done
   end;
 
-assert (fun_fact(6) == !fact)
+assert (720 == !fact);
+assert (fun_fact(6) == !fact);
+assert (fun_fact_rec(6) == !fact)

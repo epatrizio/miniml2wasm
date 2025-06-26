@@ -1,5 +1,6 @@
 (* Environment *)
 
+open Syntax
 module SMap = Map.Make (String)
 
 module IMap = Map.Make (struct
@@ -19,6 +20,7 @@ type ('a, 'b) t =
   ; funs_wasm : (int * bool * 'b * 'b option) list
   ; funs_idx : int SMap.t
   ; funs_name : string IMap.t
+  ; current_fun_name : string option
   }
 
 let counter n =
@@ -132,6 +134,7 @@ let get_fun_env env =
   let funs_wasm = env.funs_wasm in
   let funs_idx = env.funs_idx in
   let funs_name = env.funs_name in
+  let current_fun_name = env.current_fun_name in
   { types
   ; memory
   ; globals
@@ -142,9 +145,33 @@ let get_fun_env env =
   ; funs_wasm
   ; funs_idx
   ; funs_name
+  ; current_fun_name
   }
 
 let fun_wasm_idx_counter = counter (-1)
+
+let set_current_fun_name name env =
+  match env.current_fun_name with
+  | Some n ->
+    Error (Format.sprintf "current_fun_name isn't empty: %s (%s)" n name)
+  | None ->
+    let current_fun_name = Some name in
+    Ok { env with current_fun_name }
+
+let add_fun_idx env =
+  (* Warninig: must be called before add_fun_wasm *)
+  let get_current_fun_name env =
+    match env.current_fun_name with
+    | Some name ->
+      let current_fun_name = None in
+      Ok (name, { env with current_fun_name })
+    | None -> Error "invalid current_fun_name!"
+  in
+  let* name, env = get_current_fun_name env in
+  let idx = List.length env.funs_wasm in
+  let funs_idx = SMap.add name idx env.funs_idx in
+  let funs_name = IMap.add idx name env.funs_name in
+  Ok { env with funs_idx; funs_name }
 
 let add_fun_wasm is_export data_typ data_body env =
   let idx = fun_wasm_idx_counter () in
@@ -187,13 +214,6 @@ let get_export_funs_wasm_idxs env =
 
 let get_funs_wasm_nb env = List.length env.funs_wasm
 
-let add_fun_idx n env =
-  (* Warninig: must be called after add_fun_wasm *)
-  let idx = List.length env.funs_wasm - 1 in
-  let funs_idx = SMap.add n idx env.funs_idx in
-  let funs_name = IMap.add idx n env.funs_name in
-  { env with funs_idx; funs_name }
-
 let get_fun_idx n env =
   match SMap.find_opt n env.funs_idx with
   | Some idx -> Ok idx
@@ -215,6 +235,7 @@ let empty () =
   let funs_wasm = [] in
   let funs_idx = SMap.empty in
   let funs_name = IMap.empty in
+  let current_fun_name = None in
   { types
   ; memory
   ; globals
@@ -225,4 +246,5 @@ let empty () =
   ; funs_wasm
   ; funs_idx
   ; funs_name
+  ; current_fun_name
   }

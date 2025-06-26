@@ -200,8 +200,10 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
   | Elet ((typ, name), e1, e2) ->
     let env = Env.add_local_wasm name typ env in
     let idx = get_local_idx loc name env in
+    let* env =
+      match typ with Tfun _ -> Env.set_current_fun_name name env | _ -> Ok env
+    in
     let* e1_buf, stack_nb_elts, env = compile_expr e1 stack_nb_elts env in
-    let env = match typ with Tfun _ -> Env.add_fun_idx name env | _ -> env in
     let* e2_buf, stack_nb_elts, env = compile_expr e2 stack_nb_elts env in
     Buffer.add_buffer buf e1_buf;
     Buffer.add_char buf '\x21';
@@ -312,6 +314,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     in
     let result_type_buf = if typ = Tunit then [] else [ encode_valtype typ ] in
     let functype_buf = encode_functype param_type_bufs result_type_buf in
+    let* env = Env.add_fun_idx env in
     let func_env = Env.get_fun_env env in
     let func_env =
       List.fold_left
@@ -340,6 +343,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
       if res_typ = Tunit then [] else [ encode_valtype res_typ ]
     in
     let functype_buf = encode_functype param_type_bufs result_type_buf in
+    let* env = Env.add_fun_idx env in
     let func_idx, env = Env.add_import_fun_wasm functype_buf env in
     let func_idx = Int32.of_int func_idx in
     (* put func_idx on stack for let global var (typing: local is unauthorized) *)
@@ -364,8 +368,10 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     Ok (buf, stack_nb_elts, env)
   | Estmt (_loc, Slet ((typ, name), expr)) ->
     let global_buf = Buffer.create 16 in
+    let* env =
+      match typ with Tfun _ -> Env.set_current_fun_name name env | _ -> Ok env
+    in
     let* expr_buf, _stack_nb_elts, env = compile_expr expr stack_nb_elts env in
-    let env = match typ with Tfun _ -> Env.add_fun_idx name env | _ -> env in
     Buffer.add_char expr_buf '\x0b';
     write_globaltype global_buf typ;
     Buffer.add_buffer global_buf expr_buf;

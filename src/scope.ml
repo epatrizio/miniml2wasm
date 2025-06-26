@@ -37,10 +37,19 @@ and analyse_expr (loc, typ, expr') env =
     Ok ((loc, typ, Eif (e_cond, e_then, e_else)), env)
   | Elet ((typ_ident, name), e1, e2) ->
     (* _env_local: let local scope *)
-    let* e1, env_local = analyse_expr e1 env in
-    let* fresh_name, env_local = Env.add_local name env_local in
-    let* e2, _env_local = analyse_expr e2 env_local in
-    Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
+    begin
+      match typ_ident with
+      | Tfun _ ->
+        let* fresh_name, env_local = Env.add_local name env in
+        let* e1, env_local = analyse_expr e1 env_local in
+        let* e2, _env_local = analyse_expr e2 env_local in
+        Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
+      | _ ->
+        let* e1, env_local = analyse_expr e1 env in
+        let* fresh_name, env_local = Env.add_local name env_local in
+        let* e2, _env_local = analyse_expr e2 env_local in
+        Ok ((loc, typ, Elet ((typ_ident, fresh_name), e1, e2)), env)
+    end
   | Eref expr ->
     let* expr, env = analyse_expr expr env in
     Ok ((loc, typ, Eref expr), env)
@@ -130,10 +139,17 @@ and analyse_stmt (loc, stmt') env =
         let* expr, env = analyse_expr expr env in
         let* env = Env.add_global_without_fresh_name name env in
         Ok ((loc, Slet ((typ_ident, name), expr)), env)
-      | _ ->
-        let* expr, env = analyse_expr expr env in
-        let* fresh_name, env = Env.add_global name env in
-        Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+      | _ -> begin
+        match typ_ident with
+        | Tfun _ ->
+          let* fresh_name, env = Env.add_global name env in
+          let* expr, env = analyse_expr expr env in
+          Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+        | _ ->
+          let* expr, env = analyse_expr expr env in
+          let* fresh_name, env = Env.add_global name env in
+          Ok ((loc, Slet ((typ_ident, fresh_name), expr)), env)
+      end
     end
   | Sassign (var, expr) ->
     let* var, env = analyse_var var env in

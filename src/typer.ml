@@ -165,6 +165,11 @@ and typecheck_expr (loc, typ, expr') env : (expr * (typ, _) Env.t, _) result =
         error loc "local scope export functions are not allowed"
       | _ -> ()
     end;
+    let env =
+      match ident_typ with
+      | Tfun _ -> Env.set_type ident_name ident_typ env
+      | _ -> env
+    in
     let* (loc_e1, typ_e1, e1'), env = typecheck_expr e1 env in
     begin
       match (ident_typ, typ_e1) with
@@ -453,6 +458,11 @@ and typecheck_block block env : (typ * block * (typ, _) Env.t, _) result =
 and typecheck_stmt (loc, stmt') env : (stmt * (typ, _) Env.t, _) result =
   match stmt' with
   | Slet ((ident_typ, ident_name), expr) ->
+    let env =
+      match ident_typ with
+      | Tfun _ -> Env.set_type ident_name ident_typ env
+      | _ -> env
+    in
     let* (loc_e, typ_e, e'), env = typecheck_expr expr env in
     begin
       match (ident_typ, typ_e) with
