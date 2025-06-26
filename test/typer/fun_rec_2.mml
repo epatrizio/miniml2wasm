@@ -1,0 +1,5 @@
+let fun_rec : bool -> i32 = fun(x : i32) : i32 {
+  (* ... *)
+  fun_rec(42)   (* at this moment, 42 isn't a boolean! *)
+  (* ... *)
+} in 42
