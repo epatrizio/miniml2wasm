@@ -18,8 +18,45 @@ let fibo = fun(n : i32) : i32 {
   end
 };
 
-assert (fibo(15) == 610)
+(* Naive recursive version *)
+let fibo_rec : i32 -> i32 = fun(n : i32) : i32 {
+  assert (n >= 0);
+  if n == 0 then 0
+  else
+    begin
+      if n == 1 then 1
+      else fibo_rec(n-1) * fibo_rec(n-2)
+    end
+};
 
-(* TODO: Naive recursive version *)
-(* TODO: Recursive version with memoization *)
-(* TODO: Tail recursive *)
+(* Tail recursive *)
+let fibo_rec_tail : i32 -> i32 -> i32 -> i32 = fun(n : i32, a : i32, b : i32) : i32 {
+  if n <= 0 then a
+  else
+    begin
+      if n == 1 then b
+      else fibo_rec_tail(n-1, b, a+b)
+    end
+};
+
+(* Recursive version with memoization *)
+(*let memo = [0,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1] in*)
+(* memo size (15 - fibo_rec_mem(15)) is hard-coded: limitation! *)
+(*let fibo_rec_mem : i32 -> i32 = fun(n : i32) : i32 {*)
+  (*assert (n >= 0);*)
+  (*let fib = ref 0 in*)
+  (*begin*)
+    (*if memo[n] >= 0 then memo[n]*)
+    (*else*)
+      (*begin*)
+        (*fib := fibo_rec_mem(n-1) * fibo_rec_mem(n-2);*)
+        (*memo[n] := !fib;*)
+        (*!fib*)
+      (*end*)
+  (*end*)
+(*} in fibo_rec_mem(15)*)
+
+assert (fibo(15) == 610);
+assert (fibo_rec_tail(15, 0, 1) == 610)
+
+(*fibo_rec(15)*)

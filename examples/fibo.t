@@ -7,4 +7,4 @@ fibonacci:
   compilation target file _wasm/fibo.wasm: done!
   $ wasm -d _wasm/fibo.wasm -o _wasm/fibo.wat
   $ owi _wasm/fibo.wat
-  function 1function 0
+  function 3function 2function 1function 0

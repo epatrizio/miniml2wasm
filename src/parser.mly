@@ -9,10 +9,10 @@
 
 %right EQ
 %right REFEQ
-%right ARROW
 %right ELSE
 %right IN
 %right CONS
+%left ARROW
 %left COLON
 %left REF
 %left LIST
@@ -132,10 +132,14 @@ let typ :=
       | Ci32 i32 -> Tarray (typ, i32)
       | _ -> assert false }
   | args_typ = typ; ARROW; return_typ = typ; {
-      match args_typ with
-      | Tunit -> Tfun ([], return_typ)
-      | Tbool | Ti32 | Tarray _ -> Tfun ([ args_typ ], return_typ)
-      | Tfun (args_t, ret_t) -> Tfun (args_t @ [ ret_t ], return_typ)
+      match return_typ with
+      | Tunit | Tbool | Ti32 | Tlist _ | Tarray _ ->
+        begin match args_typ with
+          | Tunit -> Tfun ([], return_typ)
+          | Tbool | Ti32 | Tlist _ | Tarray _ -> Tfun ([ args_typ ], return_typ)
+          | Tfun (args_t, ret_t) -> Tfun (args_t @ [ ret_t ], return_typ)
+          | _ -> assert false
+        end
       | _ -> assert false
   }
 

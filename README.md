@@ -144,6 +144,9 @@ Variables and expressions can be inferred. But not function arguments, whose typ
 ([polymorphism](https://en.wikipedia.org/wiki/Parametric_polymorphism)). The idea would be to implement a type system like
 [Hindley–Milner](https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system), but it's complicated at this moment!
 
+Function typing limitation: a function can't return another function.
+So `let my_fun : i32 -> i32 -> i32 = ...` is interpreted as `fun(a1 : i32, a2 : i32) : i32` (not `fun(a : i32) : i32 -> i32`).
+
 Like the very interesting [AssemblyScript](https://www.assemblyscript.org) language,
 we're offering here a less powerful, sometimes limited, but sufficient and highly oriented type system to target WebAssembly.
 
@@ -156,7 +159,10 @@ To achieve this, there's a restriction: recursive functions must be specifically
 
 Nb. `miniml` doesn't support mutually recursive functions.
 
-In OCaml, there are specific keywords `rec` & `and` ([details](https://ocamlbook.org/recursive-functions/)).
+Nb. For the moment, non [tail recursive](https://en.wikipedia.org/wiki/Tail_call) functions doesn't work
+(see [Fibonacci example](https://github.com/epatrizio/miniml2wasm/blob/main/examples/fibo.mml)).
+
+In OCaml, there are specific keywords `rec` & `and` to define recursive functions ([details](https://ocamlbook.org/recursive-functions/)).
 This probably makes implementation more solid and elegant.
 
 ### About import and export
