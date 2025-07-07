@@ -11,7 +11,7 @@ end)
 
 type ('a, 'b) t =
   { types : 'a SMap.t
-  ; memory : Memory.t
+  ; memory : Memory.t ref
   ; globals : string SMap.t
   ; locals : string SMap.t
   ; globals_wasm : (string * (int * 'b)) list
@@ -84,14 +84,14 @@ let get_type n env =
   | None -> Error (Format.sprintf "ident: %s not found in env.types" n)
 
 let malloc_array typ env =
-  let memory = Memory.malloc_array typ env.memory in
-  { env with memory }
+  env.memory := Memory.malloc_array typ !(env.memory);
+  env
 
 let malloc_list_cell typ env =
-  let memory = Memory.malloc_list_cell typ env.memory in
-  { env with memory }
+  env.memory := Memory.malloc_list_cell typ !(env.memory);
+  env
 
-let is_empty_memory env = Memory.is_empty env.memory
+let is_empty_memory env = Memory.is_empty !(env.memory)
 
 let global_wasm_idx_counter = counter (-1)
 
@@ -226,7 +226,7 @@ let get_fun_name idx env =
 
 let empty () =
   let types = SMap.empty in
-  let memory = Memory.init () in
+  let memory = ref (Memory.init ()) in
   let globals = SMap.empty in
   let locals = SMap.empty in
   let globals_wasm = [] in

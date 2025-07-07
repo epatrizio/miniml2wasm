@@ -1,0 +1,6 @@
+let l_i32 = fun() : i32 list {
+  (* memory allocation in function body *)
+  44 :: 42 :: nil
+};
+
+list_hd (list_tl l_i32())   (* 42 *)

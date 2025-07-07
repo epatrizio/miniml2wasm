@@ -47,7 +47,7 @@ let rec compile_array_init buf pt typ el stack_nb_elts env =
               (Int32.add pt 4l, stack_nb_elts - 1, env)
             | Tarray (Ti32, _) | Tarray (Tbool, _) ->
               write_i32_const_s buf pt;
-              write_i32_const_s buf env.memory.previous_pointer;
+              write_i32_const_s buf !(env.memory).previous_pointer;
               write_store buf typ;
               Buffer.add_buffer buf expr_buf;
               (Int32.add pt 4l, stack_nb_elts, env)
@@ -218,7 +218,7 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     compile_expr (loc, typ, Evar (Vident (typ, name))) stack_nb_elts env
   | Econs (((_, typ_hd, _) as expr_hd), expr_tl) ->
     let env = Env.malloc_list_cell typ env in
-    let previous_pointer = env.memory.previous_pointer in
+    let previous_pointer = !(env.memory).previous_pointer in
     (* 1. The elt value *)
     let* expr_hd_buf, stack_nb_elts, env =
       compile_expr expr_hd stack_nb_elts env
@@ -270,9 +270,9 @@ and compile_expr (loc, typ, expr') stack_nb_elts env =
     assert false (* typing step control *)
   | Earray_init el ->
     let env = Env.malloc_array typ env in
-    let previous_pointer = env.memory.previous_pointer in
+    let previous_pointer = !(env.memory).previous_pointer in
     let stack_nb_elts, env =
-      compile_array_init buf env.memory.previous_pointer typ el stack_nb_elts
+      compile_array_init buf !(env.memory).previous_pointer typ el stack_nb_elts
         env
     in
     (* put memory array_pointer on stack for let local/global var *)
@@ -592,7 +592,7 @@ let write_memory_section buf env =
     let memories_buf = Buffer.create 32 in
     let memory_buf = Buffer.create 16 in
     (* single linear memory *)
-    write_memtype memory_buf (Limit_without_max env.memory.pages);
+    write_memtype memory_buf (Limit_without_max !(env.memory).pages);
     write_vector memories_buf [ memory_buf ];
     write_section buf '\x05' memories_buf
   end
