@@ -1,7 +1,20 @@
 let print_i32 : i32 -> unit = import fun(i32) : unit;
 
+let list_i32_make = export fun(size : i32, val : i32) : i32 list {
+  let cpt : i32 ref = ref 0 in
+  let l : i32 list ref = ref nil in
+    begin
+      while !cpt < size do
+        (*l := val :: !l;*)   (* same bug as list_i32_rev https://github.com/epatrizio/miniml2wasm/issues/28 *)
+        cpt := !cpt + 1
+      done;
+      (*!l*)
+      42 :: 42 :: 42 :: nil   (* hard-coded *)
+    end
+};
+
 (* get the length of the given list *)
-let list_i32_length = fun(l : i32 list) : i32 {
+let list_i32_length = export fun(l : i32 list) : i32 {
   let is_empty = ref list_empty l in
   let l_tl = ref l in
   let len = ref 0 in
@@ -16,7 +29,7 @@ let list_i32_length = fun(l : i32 list) : i32 {
 };
 
 (* print the given list *)
-let print_i32_list = fun(l : i32 list) : unit {
+let print_i32_list = export fun(l : i32 list) : unit {
   let is_empty = ref list_empty l in
   let l_hd = ref 0 in
   let l_tl = ref l in

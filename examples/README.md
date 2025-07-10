@@ -17,6 +17,8 @@ These first small examples show how to use `miniml` language in close real-life 
     - `deno run --allow-read import.js`
   - `export.mml`: exports a function whose name is `double`
   - `export.js`: `double` function (defined in the `export.wasm` module) call
+  - `list.mml`: some list manipulations
+  - `list.js`: key point = lists are created in the wasm module: They are allocated in wasm's linear memory and can therefore be easily used.
 
 *fact, fibo, export and print examples are part of the cram test suite*
 
